@@ -74,7 +74,7 @@
             this.txtKeyName.Location = new System.Drawing.Point(93, 5);
             this.txtKeyName.Margin = new System.Windows.Forms.Padding(4);
             this.txtKeyName.Name = "txtKeyName";
-            this.txtKeyName.Size = new System.Drawing.Size(266, 22);
+            this.txtKeyName.Size = new System.Drawing.Size(252, 22);
             this.txtKeyName.TabIndex = 0;
             this.txtKeyName.TextChanged += new System.EventHandler(this.CheckForBlank);
             this.txtKeyName.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtKeyNameKey_KeyPress);
@@ -87,7 +87,7 @@
             this.txtKeyValue.Location = new System.Drawing.Point(93, 73);
             this.txtKeyValue.Margin = new System.Windows.Forms.Padding(4);
             this.txtKeyValue.Name = "txtKeyValue";
-            this.txtKeyValue.Size = new System.Drawing.Size(266, 22);
+            this.txtKeyValue.Size = new System.Drawing.Size(252, 22);
             this.txtKeyValue.TabIndex = 2;
             this.txtKeyValue.TextChanged += new System.EventHandler(this.CheckForBlank);
             this.txtKeyValue.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtKeyValue_KeyPress);
@@ -123,7 +123,7 @@
             this.grbEdit.Margin = new System.Windows.Forms.Padding(4);
             this.grbEdit.Name = "grbEdit";
             this.grbEdit.Padding = new System.Windows.Forms.Padding(4);
-            this.grbEdit.Size = new System.Drawing.Size(381, 162);
+            this.grbEdit.Size = new System.Drawing.Size(367, 162);
             this.grbEdit.TabIndex = 1;
             this.grbEdit.TabStop = false;
             this.grbEdit.Text = "Main grb";
@@ -152,7 +152,7 @@
             this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 25F));
             this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 25F));
             this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 25F));
-            this.tableLayoutPanel2.Size = new System.Drawing.Size(364, 138);
+            this.tableLayoutPanel2.Size = new System.Drawing.Size(350, 138);
             this.tableLayoutPanel2.TabIndex = 4;
             // 
             // label4
@@ -181,7 +181,7 @@
             this.cboKeyType.Location = new System.Drawing.Point(93, 39);
             this.cboKeyType.Margin = new System.Windows.Forms.Padding(4);
             this.cboKeyType.Name = "cboKeyType";
-            this.cboKeyType.Size = new System.Drawing.Size(266, 24);
+            this.cboKeyType.Size = new System.Drawing.Size(252, 24);
             this.cboKeyType.TabIndex = 1;
             this.cboKeyType.SelectedIndexChanged += new System.EventHandler(this.cmbKeyType_SelectedIndexChanged);
             // 
@@ -189,7 +189,7 @@
             // 
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnCancel.Location = new System.Drawing.Point(304, 174);
+            this.btnCancel.Location = new System.Drawing.Point(290, 174);
             this.btnCancel.Margin = new System.Windows.Forms.Padding(4);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(80, 32);
@@ -202,11 +202,12 @@
             // 
             this.btnOK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnOK.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.btnOK.Location = new System.Drawing.Point(216, 174);
+            this.btnOK.Location = new System.Drawing.Point(202, 174);
             this.btnOK.Margin = new System.Windows.Forms.Padding(4);
             this.btnOK.Name = "btnOK";
             this.btnOK.Size = new System.Drawing.Size(80, 32);
             this.btnOK.TabIndex = 3;
+            this.btnOK.Text = "OK";
             this.btnOK.UseVisualStyleBackColor = true;
             this.btnOK.Click += new System.EventHandler(this.btnOK_Click);
             // 
@@ -214,14 +215,14 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(391, 192);
+            this.ClientSize = new System.Drawing.Size(377, 210);
             this.Controls.Add(this.btnOK);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.grbEdit);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
             this.Margin = new System.Windows.Forms.Padding(4);
-            this.MaximumSize = new System.Drawing.Size(679, 232);
-            this.MinimumSize = new System.Drawing.Size(395, 232);
+            this.MaximumSize = new System.Drawing.Size(679, 250);
+            this.MinimumSize = new System.Drawing.Size(395, 250);
             this.Name = "frmEdit";
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
