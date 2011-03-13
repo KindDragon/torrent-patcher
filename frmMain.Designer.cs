@@ -122,8 +122,7 @@
             // 
             this.lblTorrentName.Anchor = System.Windows.Forms.AnchorStyles.Left;
             this.lblTorrentName.AutoSize = true;
-            this.lblTorrentName.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.lblTorrentName.Location = new System.Drawing.Point(4, 38);
+            this.lblTorrentName.Location = new System.Drawing.Point(5, 40);
             this.lblTorrentName.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblTorrentName.Name = "lblTorrentName";
             this.lblTorrentName.Size = new System.Drawing.Size(35, 17);
@@ -134,8 +133,7 @@
             // 
             this.lblTorrentPath.Anchor = System.Windows.Forms.AnchorStyles.Left;
             this.lblTorrentPath.AutoSize = true;
-            this.lblTorrentPath.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.lblTorrentPath.Location = new System.Drawing.Point(4, 7);
+            this.lblTorrentPath.Location = new System.Drawing.Point(5, 8);
             this.lblTorrentPath.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblTorrentPath.Name = "lblTorrentPath";
             this.lblTorrentPath.Size = new System.Drawing.Size(39, 17);
@@ -162,6 +160,7 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tableLayoutPanel8.AutoSize = true;
+            this.tableLayoutPanel8.CellBorderStyle = System.Windows.Forms.TableLayoutPanelCellBorderStyle.Single;
             this.tableLayoutPanel8.ColumnCount = 2;
             this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 87F));
             this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
@@ -198,11 +197,11 @@
             this.lstTrackers.GridLines = true;
             this.lstTrackers.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
             this.lstTrackers.LabelEdit = true;
-            this.lstTrackers.Location = new System.Drawing.Point(91, 66);
+            this.lstTrackers.Location = new System.Drawing.Point(93, 69);
             this.lstTrackers.Margin = new System.Windows.Forms.Padding(4);
             this.lstTrackers.Name = "lstTrackers";
             this.lstTrackers.ShowItemToolTips = true;
-            this.lstTrackers.Size = new System.Drawing.Size(261, 195);
+            this.lstTrackers.Size = new System.Drawing.Size(258, 191);
             this.lstTrackers.TabIndex = 16;
             this.lstTrackers.UseCompatibleStateImageBehavior = false;
             this.lstTrackers.View = System.Windows.Forms.View.Details;
@@ -215,46 +214,45 @@
             // clhLeechers
             // 
             this.clhLeechers.Text = "Leechers";
-            this.clhLeechers.Width = 20;
+            this.clhLeechers.Width = 30;
             // 
             // clhSeeders
             // 
             this.clhSeeders.Text = "Seeders";
-            this.clhSeeders.Width = 20;
+            this.clhSeeders.Width = 30;
             // 
             // clhDownloaded
             // 
             this.clhDownloaded.Text = "Downloaded";
-            this.clhDownloaded.Width = 20;
+            this.clhDownloaded.Width = 30;
             // 
             // txtTorrentPath
             // 
             this.txtTorrentPath.BackColor = System.Drawing.SystemColors.Window;
             this.txtTorrentPath.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.txtTorrentPath.Location = new System.Drawing.Point(91, 4);
+            this.txtTorrentPath.Location = new System.Drawing.Point(93, 5);
             this.txtTorrentPath.Margin = new System.Windows.Forms.Padding(4);
             this.txtTorrentPath.Name = "txtTorrentPath";
             this.txtTorrentPath.ReadOnly = true;
-            this.txtTorrentPath.Size = new System.Drawing.Size(261, 22);
+            this.txtTorrentPath.Size = new System.Drawing.Size(258, 22);
             this.txtTorrentPath.TabIndex = 0;
             // 
             // txtTorrentName
             // 
             this.txtTorrentName.BackColor = System.Drawing.SystemColors.Window;
             this.txtTorrentName.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.txtTorrentName.Location = new System.Drawing.Point(91, 35);
+            this.txtTorrentName.Location = new System.Drawing.Point(93, 37);
             this.txtTorrentName.Margin = new System.Windows.Forms.Padding(4);
             this.txtTorrentName.Name = "txtTorrentName";
             this.txtTorrentName.ReadOnly = true;
-            this.txtTorrentName.Size = new System.Drawing.Size(261, 22);
+            this.txtTorrentName.Size = new System.Drawing.Size(258, 22);
             this.txtTorrentName.TabIndex = 1;
             this.txtTorrentName.Leave += new System.EventHandler(this.txtName_Leave);
             // 
             // lblTrackers
             // 
             this.lblTrackers.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblTrackers.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.lblTrackers.Location = new System.Drawing.Point(4, 147);
+            this.lblTrackers.Location = new System.Drawing.Point(5, 148);
             this.lblTrackers.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblTrackers.Name = "lblTrackers";
             this.lblTrackers.Size = new System.Drawing.Size(79, 32);
@@ -613,7 +611,6 @@
             // lblCity
             // 
             this.lblCity.AutoSize = true;
-            this.lblCity.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.lblCity.Location = new System.Drawing.Point(7, 107);
             this.lblCity.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCity.Name = "lblCity";
@@ -646,7 +643,7 @@
             // lblISP
             // 
             this.lblISP.AutoSize = true;
-            this.lblISP.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.lblISP.BackColor = System.Drawing.SystemColors.Window;
             this.lblISP.Location = new System.Drawing.Point(180, 107);
             this.lblISP.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblISP.Name = "lblISP";
@@ -706,7 +703,6 @@
             // lblArgs
             // 
             this.lblArgs.AutoSize = true;
-            this.lblArgs.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.lblArgs.Location = new System.Drawing.Point(7, 53);
             this.lblArgs.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblArgs.Name = "lblArgs";
@@ -718,7 +714,6 @@
             // lblTorrentClientPath
             // 
             this.lblTorrentClientPath.AutoSize = true;
-            this.lblTorrentClientPath.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.lblTorrentClientPath.Location = new System.Drawing.Point(7, 2);
             this.lblTorrentClientPath.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblTorrentClientPath.Name = "lblTorrentClientPath";
@@ -773,7 +768,7 @@
             this.lstTrackersAdd.Margin = new System.Windows.Forms.Padding(4);
             this.lstTrackersAdd.Name = "lstTrackersAdd";
             this.lstTrackersAdd.ShowItemToolTips = true;
-            this.lstTrackersAdd.Size = new System.Drawing.Size(346, 146);
+            this.lstTrackersAdd.Size = new System.Drawing.Size(350, 146);
             this.lstTrackersAdd.TabIndex = 6;
             this.lstTrackersAdd.UseCompatibleStateImageBehavior = false;
             this.lstTrackersAdd.View = System.Windows.Forms.View.Details;
