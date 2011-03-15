@@ -448,7 +448,6 @@ namespace TorrentPatcher
             for (int j = 0; j < lstTrackersAdd.Items.Count; j++)
             {
                 string retracker = lstTrackersAdd.Items[j].Text;
-                string retrackerWithoutStat = retracker.Split('?')[0];
                 bool exist = false;
                 for (int k = 0; k < lstTrackers.Items.Count; k++)
                 {
@@ -462,7 +461,7 @@ namespace TorrentPatcher
                         k--;
                         exist = false;
                     }
-                    else if (retrackerWithoutStat == announceWithoutStat)
+                    else if (retracker == announceWithoutStat)
                     {
                         exist = true;
                     }
@@ -475,11 +474,11 @@ namespace TorrentPatcher
                     }
                     else
                     {
-                        object[] objArray = new object[] { retracker, 
-                                    "?name=", _torrent.Name, "&size=", _torrent.Size, "&comment=", 
-                                    _torrent.Comment, "&isp=", (cmbCity.SelectedIndex + 1).ToString(), "+", 
-                                    (cmbISP.SelectedIndex + 1).ToString() };
-                        lstTrackers.Items.Add(string.Concat(objArray));
+                        string retrackerWithStat = String.Concat( retracker, "?name=", _torrent.Name,
+                                    "&size=", _torrent.Size.ToString(), "&comment=", _torrent.Comment,
+                                    "&isp=", (cmbCity.SelectedIndex + 1).ToString(), "+", 
+                                    (cmbISP.SelectedIndex + 1).ToString() );
+                        lstTrackers.Items.Add(retrackerWithStat);
                     }
                 }
             }
@@ -501,19 +500,20 @@ namespace TorrentPatcher
             string arguments = "magnet:?xt=urn:btih:" + _torrent.SHAHash;
             for (int m = 0; m < lstTrackersAdd.Items.Count; m++)
             {
-                if (regex.IsMatch(lstTrackersAdd.Items[m].Text))
+                string retracker = lstTrackersAdd.Items[m].Text;
+                if (regex.IsMatch(retracker))
                 {
                     if (!chkStat.Checked)
                     {
-                        arguments = arguments + "&tr=" + lstTrackersAdd.Items[m].Text;
+                        arguments = arguments + "&tr=" + retracker;
                     }
                     else
                     {
-                        object obj2 = arguments;
-                        object[] objArray2 = new object[] { obj2, "&tr=", lstTrackersAdd.Items[m].Text, 
-                                    "?name=", _torrent.Name, "&size=", _torrent.Size, "&comment=", _torrent.Comment, 
-                                    "&isp=", (cmbCity.SelectedIndex + 1).ToString(), "+", (cmbISP.SelectedIndex + 1).ToString() };
-                        arguments = string.Concat(objArray2);
+                        string linkWithStat = String.Concat(arguments, "&tr=", retracker, 
+                                    "?name=", _torrent.Name, "&size=", _torrent.Size.ToString(), 
+                                    "&comment=", _torrent.Comment,  "&isp=", (cmbCity.SelectedIndex + 1).ToString(), 
+                                    "+", (cmbISP.SelectedIndex + 1).ToString() );
+                        arguments = linkWithStat;
                     }
                 }
             }
