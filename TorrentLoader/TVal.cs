@@ -10,7 +10,7 @@ namespace TorrentPatcher.TorrentLoader
 		DataType _type;
 		object _object;
 
-		public TVal(DataType DType,object DObject)
+		public TVal(DataType DType, object DObject)
 		{
 			_type=DType;
 			_object=DObject;
@@ -25,6 +25,11 @@ namespace TorrentPatcher.TorrentLoader
 		{
 			get { return _object; }
 		}
+
+        public override string ToString()
+        {
+            return _object.ToString();
+        }
 	}
 }
 

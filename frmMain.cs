@@ -447,33 +447,35 @@ namespace TorrentPatcher
             Regex regex = new Regex("(http|https|udp)://(.*)");
             for (int j = 0; j < lstTrackersAdd.Items.Count; j++)
             {
-                bool flag = false;
+                string retracker = lstTrackersAdd.Items[j].Text;
+                string retrackerWithoutStat = retracker.Split('?')[0];
+                bool exist = false;
                 for (int k = 0; k < lstTrackers.Items.Count; k++)
                 {
-                    if (!regex.IsMatch(lstTrackers.Items[k].SubItems[0].Text))
+                    string announce = lstTrackers.Items[k].SubItems[0].Text;
+                    string announceWithoutStat = announce.Split('?')[0];
+                    if (announce == "New...")
+                        continue;
+                    else if (!regex.IsMatch(announce))
                     {
                         lstTrackers.Items[k].Remove();
                         k--;
-                        flag = false;
+                        exist = false;
                     }
-                    else if (lstTrackers.Items[k].SubItems[0].Text == lstTrackersAdd.Items[j].Text)
+                    else if (retrackerWithoutStat == announceWithoutStat)
                     {
-                        flag = true;
-                    }
-                    else
-                    {
-                        flag = false;
+                        exist = true;
                     }
                 }
-                if (!flag & regex.IsMatch(lstTrackersAdd.Items[j].Text))
+                if (!exist & regex.IsMatch(retracker))
                 {
                     if (!chkStat.Checked)
                     {
-                        lstTrackers.Items.Add(lstTrackersAdd.Items[j].Text);
+                        lstTrackers.Items.Add(retracker);
                     }
                     else
                     {
-                        object[] objArray = new object[] { lstTrackersAdd.Items[j].Text, 
+                        object[] objArray = new object[] { retracker, 
                                     "?name=", _torrent.Name, "&size=", _torrent.Size, "&comment=", 
                                     _torrent.Comment, "&isp=", (cmbCity.SelectedIndex + 1).ToString(), "+", 
                                     (cmbISP.SelectedIndex + 1).ToString() };
@@ -482,13 +484,11 @@ namespace TorrentPatcher
                 }
             }
             UpdateTrackerStructure();
-            string str2 = FileVersionInfo.GetVersionInfo(ini.IniReadValue("Settings", "LaunchPath")).ToString();
-            str2 = ini.IniReadValue("Settings", "TrackersFile");
-            int startIndex = str2.LastIndexOf(@"\");
-            str2 = str2.Remove(startIndex);
-            startIndex = torrentPath.LastIndexOf(@"\");
-            str2 = str2 + torrentPath.Substring(startIndex);
-            txtTorrentPath.Text = str2;
+            string folder = GetSettingPath() + "Torrents";
+            Directory.CreateDirectory(folder);
+            int startIndex = torrentPath.LastIndexOf(@"\");
+            string destTorrentFile = folder + torrentPath.Substring(startIndex);
+            txtTorrentPath.Text = destTorrentFile;
             btnSave_Click(null, null);
             stopwatch.Stop();
             ini.IniWriteValue("Performance", DateTime.Now.ToString() + " rewrite", stopwatch.ElapsedMilliseconds.ToString());
@@ -1374,9 +1374,8 @@ namespace TorrentPatcher
                     {
                         str = "";
                         byte[] buffer = (byte[]) ValToAdd[str2].dObject;
-                        str = (buffer.Length > 100) ? 
-                            (BitConverter.ToString(buffer).Replace("-", "").Substring(0, 100) + "...") : 
-                            BitConverter.ToString(buffer).Replace("-", "");
+                        string val = BitConverter.ToString(buffer).Replace("-", "");
+                        str = (buffer.Length > 100) ? (val.Substring(0, 100) + "...") : val;
                         string[] strArray = new string[] { str2, "(s)[", buffer.Length.ToString(), "]=", str };
                         ParentTN.Nodes.Add(str2, string.Concat(strArray));
                         break;
