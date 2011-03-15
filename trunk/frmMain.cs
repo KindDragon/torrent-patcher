@@ -65,7 +65,8 @@ namespace TorrentPatcher
                 {
                     thread.Start();
                 }
-                MessageBox.Show("Пожалуйста, выберите своего провайдера в выпадающем списке\nи путь к программе закачки торрент-файлов", 
+                MessageBox.Show("Пожалуйста, выберите своего провайдера в выпадающем списке\n" +
+                    "и путь к программе закачки торрент-файлов", 
                     Application.ProductName + Application.ProductVersion, MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
                 tabControlMain.SelectTab(2);
                 tabControlSettings.SelectTab(0);
@@ -242,7 +243,8 @@ namespace TorrentPatcher
             if (dNode.NodeType(selectedNode) == DataType.List)
             {
                 parentList = true;
-                trvTorrent.SelectedNode = selectedNode.Nodes.Add(dNode.NodeText(selectedNode.Nodes.Count.ToString(), DataType.String, ""));
+                trvTorrent.SelectedNode = selectedNode.Nodes.Add(
+                    dNode.NodeText(selectedNode.Nodes.Count.ToString(), DataType.String, ""));
             }
             else
             {
@@ -256,7 +258,8 @@ namespace TorrentPatcher
             }
             else
             {
-                new frmEdit(false, dNode.NodePath(trvTorrent.SelectedNode), DataType.String, "", parentList, new dSructureUpdate(UpdateStructCallBack));
+                new frmEdit(false, dNode.NodePath(trvTorrent.SelectedNode), DataType.String, "", parentList, 
+                    new dSructureUpdate(UpdateStructCallBack));
             }
         }
 
@@ -336,24 +339,26 @@ namespace TorrentPatcher
 
             try
             {
-                IniFile file = new IniFile(dialog.FileName);
+                IniFile initrackers = new IniFile(dialog.FileName);
                 ini.IniWriteValue("Settings", "TrackersFile", dialog.FileName);
-                int num = 0;
+                int Mi = 0;
                 cmbCity.Items.Clear();
-                for (int i = 1; i <= file.IniReadIntValue("Город", "Количество"); i++)
+                for (int i = 1; i <= initrackers.IniReadIntValue("Город", "Количество"); i++)
                 {
-                    cmbCity.Items.Add(file.IniReadValue("Город", i.ToString()));
-                    num = i - 1;
+                    cmbCity.Items.Add(initrackers.IniReadValue("Город", i));
+                    Mi = i - 1;
                 }
-                if (num >= Convert.ToInt32(ini.IniReadArray("Settings", "TrackerIniIndex")[0]))
+                int trackerIniIndex = Convert.ToInt32(ini.IniReadArray("Settings", "TrackerIniIndex")[0]);
+                if (Mi >= trackerIniIndex)
                 {
-                    cmbCity.SelectedIndex = Convert.ToInt32(ini.IniReadArray("Settings", "TrackerIniIndex")[0]);
+                    cmbCity.SelectedIndex = trackerIniIndex;
                 }
                 else
                 {
                     cmbCity.SelectedIndex = 0;
                 }
                 cmbCity.Refresh();
+
                 if (!chkTrackersCheck.Checked)
                 {
                     btnCheckTrackers_Click(null, null);
@@ -519,7 +524,12 @@ namespace TorrentPatcher
                 tslStatus.Text = "Файл успешно передан";
                 stopwatch.Stop();
                 ini.IniWriteValue("Performance", DateTime.Now.ToString() + " magnet", stopwatch.ElapsedMilliseconds.ToString());
-                if (MessageBox.Show("Торрент файл будет пропатчен безопасно по одной из причин:\nа) наличия в торренте флага private\nб) установленной настройке MAGNET в Настройки->Дополнительно\n\nПОЖАЛУЙСТА НЕ НАЖИМАЙТЕ ОК, ПОКА НЕ ДОБАВИТЕ ЗАКАЧКУ В ТОРРЕНТ-КЛИЕНТ", Application.ProductName + Application.ProductVersion, MessageBoxButtons.OKCancel, MessageBoxIcon.Asterisk) == DialogResult.OK)
+                if (MessageBox.Show("Торрент файл будет пропатчен безопасно по одной из причин:\n" +
+                    "а) наличия в торренте флага private\n" +
+                    "б) установленной настройке MAGNET в Настройки->Дополнительно\n\n" + 
+                    "ПОЖАЛУЙСТА НЕ НАЖИМАЙТЕ ОК, ПОКА НЕ ДОБАВИТЕ ЗАКАЧКУ В ТОРРЕНТ-КЛИЕНТ", 
+                    Application.ProductName + Application.ProductVersion, MessageBoxButtons.OKCancel, 
+                    MessageBoxIcon.Asterisk) == DialogResult.OK)
                 {
                     Process.Start(txtLaunchPath.Text, arguments);
                     tslStatus.Text = "Magnet успешно передан";
@@ -566,7 +576,8 @@ namespace TorrentPatcher
                 RegistryKey key = Registry.ClassesRoot.OpenSubKey(name);
                 if (((((string) key.GetValue("")) == "Torrent Loader File") && 
                     (((string) key.OpenSubKey("DefaultIcon").GetValue("")) == (Application.ExecutablePath + ",0"))) && 
-                    (((string) key.OpenSubKey("shell").OpenSubKey("open").OpenSubKey("command").GetValue("")) == ("\"" + Application.ExecutablePath + "\" %1")))
+                    (((string) key.OpenSubKey("shell").OpenSubKey("open").OpenSubKey("command").GetValue("")) == ("\"" + 
+                    Application.ExecutablePath + "\" %1")))
                 {
                     return true;
                 }
@@ -818,31 +829,26 @@ namespace TorrentPatcher
 
         private void comboBoxCity_SelectedIndexChanged(object sender, EventArgs e)
         {
-            int num4;
-            IniFile file = new IniFile(ini.IniReadValue("Settings", "TrackersFile").Replace("txt", "ini"));
-            int num = 0;
+            IniFile initrackers = new IniFile(ini.IniReadValue("Settings", "TrackersFile").Replace("txt", "ini"));
+            int Mi = 0;
             cmbISP.Items.Clear();
-            int num2 = 1;
-            while (true)
+            for (int i = 1;
+                i <= Convert.ToInt32(initrackers.IniReadValue("Провайдеры "
+                    + initrackers.IniReadValue("Город", (cmbCity.SelectedIndex + 1).ToString()),
+                    "Количество"));
+                i++)
             {
-                num4 = cmbCity.SelectedIndex + 1;
-                if (num2 <= file.IniReadIntValue("Провайдеры " + file.IniReadValue("Город", num4.ToString()), "Количество"))
-                {
-                    int num3 = cmbCity.SelectedIndex + 1;
-                    cmbISP.Items.Add(file.IniReadValue("Провайдеры " + file.IniReadValue("Город", num3.ToString()), num2.ToString()));
-                    num = num2 - 1;
-                    num2++;
-                    continue;
-                }
-                break;
+                cmbISP.Items.Add(initrackers.IniReadValue("Провайдеры "
+                    + initrackers.IniReadValue("Город", (cmbCity.SelectedIndex + 1).ToString()),
+                    i.ToString()));
+                Mi = i - 1;
             }
             int index = 0;
-            if (num >= Convert.ToInt32(ini.IniReadArray("Settings", "TrackerIniIndex")[1]))
-            {
-                index = Convert.ToInt32(ini.IniReadArray("Settings", "TrackerIniIndex")[1]);
-            }
+            int trackerIniIndex = Convert.ToInt32(ini.IniReadArray("Settings", "TrackerIniIndex")[1]);
+            if (Mi >= trackerIniIndex)
+                index = trackerIniIndex;
             if (cmbISP.Items.Count > 0)
-                cmbISP.SelectedIndex = index;
+                cmbISP.SelectedIndex = index < 0 ? 0 : index;
             else
                 cmbISP.Text = "";
             cmbISP.Refresh();
@@ -1115,7 +1121,9 @@ namespace TorrentPatcher
 
         private string LaunchArgs()
         {
-            return txtArguments.Text.Replace("%1", "\"" + txtTorrentPath.Text + "\"").Replace("%2", "\"" + Path.GetFileName(txtTorrentPath.Text) + "\"").Replace("%3", "\"" + txtTorrentName.Text + "\"");
+            return txtArguments.Text.Replace("%1", "\"" + txtTorrentPath.Text + "\"").
+                Replace("%2", "\"" + Path.GetFileName(txtTorrentPath.Text) + "\"").
+                Replace("%3", "\"" + txtTorrentName.Text + "\"");
         }
 
         private void ListRenamer(TreeNode Parent)
@@ -1148,23 +1156,37 @@ namespace TorrentPatcher
         {
             try
             {
-                chkAutoCheckUpdates.Checked = Convert.ToBoolean(ini.IniReadValue("Settings", "AutoCheckUpdates"));
-                chkUpdatePatcher.Checked = Convert.ToBoolean(ini.IniReadValue("Settings", "UpdatePatcher"));
-                chkUpdateTrackers.Checked = Convert.ToBoolean(ini.IniReadValue("Settings", "UpdateTrackers"));
+                chkAutoCheckUpdates.Checked = ini.IniReadBoolValue("Settings", "AutoCheckUpdates");
+                chkUpdatePatcher.Checked = ini.IniReadBoolValue("Settings", "UpdatePatcher");
+                chkUpdateTrackers.Checked = ini.IniReadBoolValue("Settings", "UpdateTrackers");
                 txtLaunchPath.Text = ini.IniReadValue("Settings", "LaunchPath");
                 txtArguments.Text = ini.IniReadValue("Settings", "LaunchArguments");
-                chkSecureEditing.Checked = Convert.ToBoolean(ini.IniReadValue("Settings", "SecureEdit"));
-                chkAutoLaunchAllow.Checked = Convert.ToBoolean(ini.IniReadValue("Settings", "AutoLaunch"));
-                chkPatchAnnouncer.Checked = Convert.ToBoolean(ini.IniReadValue("Settings", "PatchAnnouncer"));
-                chkMagnet.Checked = Convert.ToBoolean(ini.IniReadValue("Settings", "MagnetAnnounce"));
+                chkSecureEditing.Checked = ini.IniReadBoolValue("Settings", "SecureEdit");
+                chkAutoLaunchAllow.Checked = ini.IniReadBoolValue("Settings", "AutoLaunch");
+                chkPatchAnnouncer.Checked = ini.IniReadBoolValue("Settings", "PatchAnnouncer");
+                chkMagnet.Checked = ini.IniReadBoolValue("Settings", "MagnetAnnounce");
                 txtUpdateTrackers.Text = ini.IniReadValue("Settings", "DownloadURL");
                 txtUpdatePatcher.Text = ini.IniReadValue("Settings", "UpdateURL");
-                chkTrackersCheck.Checked = Convert.ToBoolean(ini.IniReadValue("Settings", "CheckHosts"));
-                chkPingCheck.Checked = Convert.ToBoolean(ini.IniReadValue("Settings", "CheckPing"));
-                chkStat.Checked = Convert.ToBoolean(ini.IniReadValue("Settings", "AddStat"));
+                chkTrackersCheck.Checked = ini.IniReadBoolValue("Settings", "CheckHosts");
+                chkPingCheck.Checked = ini.IniReadBoolValue("Settings", "CheckPing");
+                chkStat.Checked = ini.IniReadBoolValue("Settings", "AddStat");
                 if (!System.IO.File.Exists(ini.IniReadValue("Settings", "TrackersFile")))
                 {
-                    System.IO.File.WriteAllText(GetSettingPath() + @"trackerssimple.ini", "[Город]" + Environment.NewLine + "Количество=1" + Environment.NewLine + "1=Санкт-Петербург" + Environment.NewLine + "[Провайдеры Санкт-Петербург]" + Environment.NewLine + "Количество=1" + Environment.NewLine + "1=Корбина" + Environment.NewLine + "[Ретрекеры Санкт-Петербург Корбина]" + Environment.NewLine + "Количество=7" + Environment.NewLine + "1=http://10.121.10.1:2710/announce" + Environment.NewLine + "2=http://netmaster.dyndns.ws:2710/announce" + Environment.NewLine + "3=http://netmaster2.dyndns.ws:2710/announce" + Environment.NewLine + "4=http://netmaster3.dyndns.ws:2710/announce" + Environment.NewLine + "5=http://corbinaretracker.dyndns.org:80/announce.php" + Environment.NewLine + "6=http://netmaster4.dyndns.ws:2710/announce" + Environment.NewLine + "7=http://local-torrent-stats.no-ip.org:2710/announce", Encoding.Default);
+                    System.IO.File.WriteAllText(GetSettingPath() + @"trackerssimple.ini", 
+                        "[Город]" + Environment.NewLine + "Количество=1" + Environment.NewLine + 
+                        "1=Санкт-Петербург" + Environment.NewLine + 
+                        "[Провайдеры Санкт-Петербург]" + Environment.NewLine + 
+                        "Количество=1" + Environment.NewLine + 
+                        "1=Корбина" + Environment.NewLine + 
+                        "[Ретрекеры Санкт-Петербург Корбина]" + Environment.NewLine + 
+                        "Количество=7" + Environment.NewLine + 
+                        "1=http://10.121.10.1:2710/announce" + Environment.NewLine + 
+                        "2=http://netmaster.dyndns.ws:2710/announce" + Environment.NewLine + 
+                        "3=http://netmaster2.dyndns.ws:2710/announce" + Environment.NewLine + 
+                        "4=http://netmaster3.dyndns.ws:2710/announce" + Environment.NewLine + 
+                        "5=http://corbinaretracker.dyndns.org:80/announce.php" + Environment.NewLine + 
+                        "6=http://netmaster4.dyndns.ws:2710/announce" + Environment.NewLine + 
+                        "7=http://local-torrent-stats.no-ip.org:2710/announce", Encoding.Default);
                     ini.IniWriteValue("Settings", "TrackersFile", GetSettingPath() + @"trackerssimple.ini");
                 }
                 IniFile file = new IniFile(ini.IniReadValue("Settings", "TrackersFile"));
@@ -1175,14 +1197,11 @@ namespace TorrentPatcher
                     cmbCity.Items.Add(file.IniReadValue("Город", i.ToString()));
                     num = i - 1;
                 }
-                if (num >= Convert.ToInt32(ini.IniReadArray("Settings", "TrackerIniIndex")[0]))
-                {
-                    cmbCity.SelectedIndex = Convert.ToInt32(ini.IniReadArray("Settings", "TrackerIniIndex")[0]);
-                }
+                int trackerIniIndex = Convert.ToInt32(ini.IniReadArray("Settings", "TrackerIniIndex")[0]);
+                if (num >= trackerIniIndex)
+                    cmbCity.SelectedIndex = trackerIniIndex;
                 else
-                {
                     cmbCity.SelectedIndex = 0;
-                }
                 cmbCity.Refresh();
             }
             catch (System.Exception /*ex*/)
@@ -1241,7 +1260,8 @@ namespace TorrentPatcher
 
         private void MoveNode(TreeNode Node, bool MoveUp)
         {
-            if (((trvTorrent.SelectedNode.Index == 0) && MoveUp) || ((trvTorrent.SelectedNode.Index == (trvTorrent.SelectedNode.Parent.Nodes.Count - 1)) && !MoveUp))
+            if (((trvTorrent.SelectedNode.Index == 0) && MoveUp) || 
+                ((trvTorrent.SelectedNode.Index == (trvTorrent.SelectedNode.Parent.Nodes.Count - 1)) && !MoveUp))
             {
                 trvTorrent.Focus();
             }
@@ -1258,7 +1278,8 @@ namespace TorrentPatcher
                 if (dNode.NodeType(parent) == DataType.List)
                 {
                     Node.Text = index.ToString() + Node.Text.Remove(0, Node.Text.IndexOf('('));
-                    parent.Nodes[index].Text = Node.Index.ToString() + parent.Nodes[index].Text.Remove(0, parent.Nodes[index].Text.IndexOf('('));
+                    parent.Nodes[index].Text = Node.Index.ToString() + 
+                        parent.Nodes[index].Text.Remove(0, parent.Nodes[index].Text.IndexOf('('));
                 }
                 Node.Remove();
                 parent.Nodes.Insert(index, Node);
@@ -1353,7 +1374,9 @@ namespace TorrentPatcher
                     {
                         str = "";
                         byte[] buffer = (byte[]) ValToAdd[str2].dObject;
-                        str = (buffer.Length > 100) ? (BitConverter.ToString(buffer).Replace("-", "").Substring(0, 100) + "...") : BitConverter.ToString(buffer).Replace("-", "");
+                        str = (buffer.Length > 100) ? 
+                            (BitConverter.ToString(buffer).Replace("-", "").Substring(0, 100) + "...") : 
+                            BitConverter.ToString(buffer).Replace("-", "");
                         string[] strArray = new string[] { str2, "(s)[", buffer.Length.ToString(), "]=", str };
                         ParentTN.Nodes.Add(str2, string.Concat(strArray));
                         break;
@@ -1393,7 +1416,9 @@ namespace TorrentPatcher
                     {
                         str = "";
                         byte[] dObject = (byte[]) val.dObject;
-                        str = (dObject.Length > 100) ? (BitConverter.ToString(dObject).Replace("-", "").Substring(0, 100) + "...") : BitConverter.ToString(dObject).Replace("-", "");
+                        str = (dObject.Length > 100) ? (
+                            BitConverter.ToString(dObject).Replace("-", "").Substring(0, 100) + "...") : 
+                            BitConverter.ToString(dObject).Replace("-", "");
                         string[] strArray = new string[] { num.ToString(), "(s)[", dObject.Length.ToString(), "]=", str };
                         ParentTN.Nodes.Add(string.Concat(strArray));
                         break;
@@ -1431,7 +1456,8 @@ namespace TorrentPatcher
             ini.IniWriteValue("Settings", "MagnetAnnounce", chkMagnet.Checked.ToString());
             ini.IniWriteValue("Settings", "DownloadURL", txtUpdateTrackers.Text);
             ini.IniWriteValue("Settings", "UpdateURL", txtUpdatePatcher.Text);
-            ini.IniWriteValue("Settings", "TrackerIniIndex", cmbCity.SelectedIndex.ToString() + " " + cmbISP.SelectedIndex.ToString());
+            ini.IniWriteValue("Settings", "TrackerIniIndex", cmbCity.SelectedIndex.ToString() + " " + 
+                cmbISP.SelectedIndex.ToString());
             if (ini.IniReadBoolValue("Settings", "FirstRun") & !chkTrackersCheck.Checked)
             {
                 tabControlMain.SelectedTab = tabSettings;

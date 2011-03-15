@@ -1,67 +1,65 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 
 namespace TorrentPatcher
 {
-    public static class dNode
-    {
-        public static string NodePath(TreeNode Node)
-        {
-            string str = (Node.Name != "") ? Node.Name : Node.Index.ToString();
-            if (Node.Parent != null)
-            {
-                str = NodePath(Node.Parent) + "/" + str;
-            }
-            return str;
-        }
+	public static class dNode
+	{
+		public static string NodePath(TreeNode Node)
+		{
+			string Path = Node.Name != "" ? Node.Name : Node.Index.ToString();
+			if (Node.Parent != null)
+			{
+				Path = NodePath(Node.Parent) + "/" + Path;
+			}
+			return Path;
+		}
 
-        public static string NodeText(string Name, DataType Type, string Value)
-        {
-            string str = Name + "(";
-            switch (Type)
-            {
-                case DataType.Int:
-                    return (str + "i)=" + Value);
+		public static DataType NodeType(TreeNode Node)
+		{
+			string NodeDT = Node.Text.Substring(Node.Text.IndexOf('(') + 1, Node.Text.IndexOf(')', Node.Text.IndexOf('(')) - Node.Text.IndexOf('(') - 1);
+			switch (NodeDT)
+			{
+				case "d":
+					return DataType.Dictionary;
+				case "l":
+					return DataType.List;
+				case "i":
+					return DataType.Int;
+				default:
+					return DataType.String;
+			}
+		}
 
-                case DataType.List:
-                    return (str + "l)");
+		public static string NodeVal(TreeNode Node)
+		{
+			if (Node == null)
+				return "";
+			int start = Node.Text.IndexOf('=') + 1;
+			if (start < 2)
+				return "";
+			return Node.Text.Substring(Node.Text.IndexOf('=') + 1);
+		}
 
-                case DataType.Dictionary:
-                    return (str + "d)");
-            }
-            string str2 = str;
-            return (str2 + "s)[" + Value.Length.ToString() + "]=" + Value);
-        }
-
-        public static DataType NodeType(TreeNode Node)
-        {
-            switch (Node.Text.Substring(Node.Text.IndexOf('(') + 1, (Node.Text.IndexOf(')', Node.Text.IndexOf('(')) - Node.Text.IndexOf('(')) - 1))
-            {
-                case "d":
-                    return DataType.Dictionary;
-
-                case "l":
-                    return DataType.List;
-
-                case "i":
-                    return DataType.Int;
-            }
-            return DataType.String;
-        }
-
-        public static string NodeVal(TreeNode Node)
-        {
-            if (Node == null)
-            {
-                return "";
-            }
-            int num = Node.Text.IndexOf('=') + 1;
-            if (num < 2)
-            {
-                return "";
-            }
-            return Node.Text.Substring(Node.Text.IndexOf('=') + 1);
-        }
-    }
+		public static string NodeText(string Name, DataType Type, string Value)
+		{
+			string s = Name + "(";
+			switch (Type)
+			{
+				case DataType.Dictionary:
+					s += "d)";
+					break;
+				case DataType.List:
+					s += "l)";
+					break;
+				case DataType.Int:
+					s += "i)=" + Value;
+					break;
+				default:
+					s += "s)[" + Value.Length.ToString() + "]=" + Value;
+					break;
+			}
+			return s;
+		}
+	}
 }
-

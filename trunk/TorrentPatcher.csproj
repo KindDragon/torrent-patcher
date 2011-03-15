@@ -177,7 +177,6 @@
   <ItemGroup>
     <Content Include="TorrentPatcher.ico" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent />

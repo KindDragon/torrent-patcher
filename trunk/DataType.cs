@@ -1,5 +1,8 @@
 ﻿namespace TorrentPatcher
 {
+    /// <summary>
+    /// The Data types
+    /// </summary>
     public enum DataType
     {
         String,
