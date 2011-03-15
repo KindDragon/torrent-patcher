@@ -1,16 +1,23 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 
 namespace TorrentPatcher.TorrentLoader
 {
+    /// <summary>
+    /// Writes a Dictionary of type <string, TVal> to a .torrent file
+    /// </summary>
     public class TorrentWriter
     {
-        private Encoding _enc;
-        private string _path;
-        private Dictionary<string, TVal> _root;
-        private StreamWriter _torrent;
+        #region Inner Vars
+        StreamWriter _torrent;
+        string _path;
+        Dictionary<string, TVal> _root;
+        Encoding _enc;
+        #endregion
 
+        #region Constructors
         public TorrentWriter(string TPath, Dictionary<string, TVal> Root, Encoding enc)
         {
             _path = TPath;
@@ -18,29 +25,29 @@ namespace TorrentPatcher.TorrentLoader
             _enc = enc;
             Write();
         }
+        #endregion
 
+        #region Writing
         private void Write()
         {
             try
             {
-                _torrent = new StreamWriter(File.Create(_path), Encoding.ASCII);
+                //_torrent = new BinaryWriter(new FileStream(_path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite),Encoding.UTF8);
+                _torrent = new StreamWriter(File.Create(_path),Encoding.ASCII);
             }
-            catch
-            {
-                return;
-            }
+            catch { return; }
             WriteData(_root);
             _torrent.Close();
         }
 
-        private void WriteData(Dictionary<string, TVal> Data)
+        private void WriteData(Dictionary<string,TVal> Data)
         {
             _torrent.Write('d');
-            foreach (string str in Data.Keys)
+            foreach (string key in Data.Keys)
             {
-                bool flag1 = str == "comment";
-                WriteData(str);
-                WriteData(Data[str]);
+                if (key == "comment") { Debug.Print("comment"); }
+                WriteData(key);
+                WriteData(Data[key]);
             }
             _torrent.Write('e');
         }
@@ -48,9 +55,9 @@ namespace TorrentPatcher.TorrentLoader
         private void WriteData(List<TVal> Data)
         {
             _torrent.Write('l');
-            foreach (TVal val in Data)
+            foreach (TVal current in Data)
             {
-                WriteData(val);
+                WriteData(current);
             }
             _torrent.Write('e');
         }
@@ -60,9 +67,11 @@ namespace TorrentPatcher.TorrentLoader
             _torrent.Write(Data.Length);
             _torrent.Write(':');
             _torrent.Close();
-            FileStream stream = new FileStream(_path, FileMode.Append, FileAccess.Write);
-            stream.Write(Data, 0, Data.Length);
-            stream.Close();
+            using(FileStream test = new FileStream(_path, FileMode.Append, FileAccess.Write))
+			{
+	            test.Write(Data,0,Data.Length);
+	            test.Close();
+			}
             _torrent = new StreamWriter(_path, true);
         }
 
@@ -73,32 +82,33 @@ namespace TorrentPatcher.TorrentLoader
 
         private void WriteData(string Data)
         {
-            UTF8Encoding encoding = new UTF8Encoding();
-            WriteData(encoding.GetBytes(Data));
+            //Data=Encoding.
+            //_torrent.Write(Data.Length.ToString() + ":");
+            UTF8Encoding enc = new UTF8Encoding();
+            WriteData(enc.GetBytes(Data));
         }
 
         private void WriteData(TVal Data)
         {
             switch (Data.Type)
             {
-                case DataType.Int:
-                    WriteData((long) Data.dObject);
-                    return;
-
-                case DataType.List:
-                    WriteData((List<TVal>) Data.dObject);
-                    return;
-
                 case DataType.Dictionary:
-                    WriteData((Dictionary<string, TVal>) Data.dObject);
-                    return;
-
+                    WriteData((Dictionary<string, TVal>)Data.dObject);
+                    break;
+                case DataType.List:
+                    WriteData((List<TVal>)Data.dObject);
+                    break;
                 case DataType.Byte:
-                    WriteData((byte[]) Data.dObject);
-                    return;
+                    WriteData((byte[])Data.dObject);
+                    break;
+                case DataType.Int:
+                    WriteData((long)Data.dObject);
+                    break;
+                default:
+                    WriteData((string)Data.dObject);
+                    break;
             }
-            WriteData((string) Data.dObject);
         }
+        #endregion
     }
 }
-

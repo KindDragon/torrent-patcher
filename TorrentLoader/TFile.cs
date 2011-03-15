@@ -2,48 +2,27 @@
 
 namespace TorrentPatcher.TorrentLoader
 {
-    public class TFile
+    /// <summary>
+    /// A Class for the files in the torrent
+    /// </summary>
+    public class TFile //Added 25.4.2007
     {
-        private long _FirstPiece;
-        private long _len;
-        private string _name;
-        private string _path;
-        private long _PieceLength;
+        long _len;
+        string _path;
+        string _name;
+        long _FirstPiece;
+        long _PieceLength;
 
-        public TFile(long Size, List<TVal> FullPath, long pStart, long pLen)
+        public TFile(long Size, string FullPath,long pStart,long pLen)
         {
             _len = Size;
-            _FirstPiece = pStart;
-            _PieceLength = pLen;
-            _path = "";
-            foreach (TVal val in FullPath)
+            _FirstPiece=pStart;
+            _PieceLength=pLen;
+            int FileNamePos = FullPath.LastIndexOf(@"\");
+            if (FileNamePos > 0)
             {
-                _path = _path + @"\" + ((string) val.dObject);
-            }
-            _path = _path.Remove(0, 1);
-            int length = _path.LastIndexOf(@"\");
-            if (length > 0)
-            {
-                _name = _path.Substring(length + 1);
-                _path = _path.Substring(0, length);
-            }
-            else
-            {
-                _name = _path;
-                _path = "";
-            }
-        }
-
-        public TFile(long Size, string FullPath, long pStart, long pLen)
-        {
-            _len = Size;
-            _FirstPiece = pStart;
-            _PieceLength = pLen;
-            int length = FullPath.LastIndexOf(@"\");
-            if (length > 0)
-            {
-                _path = FullPath.Substring(0, length);
-                _name = FullPath.Substring(length + 1);
+                _path = FullPath.Substring(0, FileNamePos);
+                _name = FullPath.Substring(FileNamePos + 1);
             }
             else
             {
@@ -52,44 +31,53 @@ namespace TorrentPatcher.TorrentLoader
             }
         }
 
-        public long FirstPiece
+        public TFile(long Size, List<TVal> FullPath,long pStart,long pLen)
         {
-            get
+            _len = Size;
+            _FirstPiece=pStart;
+            _PieceLength=pLen;
+            _path="";
+            foreach (TVal tPath in FullPath)
             {
-                return _FirstPiece;
+                _path += @"\" + (string)tPath.dObject;
+            }
+            _path = _path.Remove(0, 1);
+            int FileNamePos = _path.LastIndexOf(@"\");
+            if (FileNamePos > 0)
+            {
+                _name = _path.Substring(FileNamePos + 1);
+                _path = _path.Substring(0, FileNamePos);
+            }
+            else
+            {
+                _name = _path;
+                _path = "";
             }
         }
 
         public long Length
         {
-            get
-            {
-                return _len;
-            }
-        }
-
-        public string Name
-        {
-            get
-            {
-                return _name;
-            }
+            get { return _len; }
         }
 
         public string Path
         {
-            get
-            {
-                return _path;
-            }
+            get { return _path; }
+        }
+
+        public string Name
+        {
+            get { return _name; }
+        }
+
+        public long FirstPiece
+        {
+        	get {return _FirstPiece;}
         }
 
         public long PieceLength
         {
-            get
-            {
-                return _PieceLength;
-            }
+        	get {return _PieceLength;}
         }
     }
 }

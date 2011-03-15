@@ -1,4 +1,28 @@
-﻿using System;
+/*
+ * IconHandler - by Gil Schmidt
+ * 
+ * - Originaly was writtin for a p2p project called Kibutz.
+ * - The IconFromExtension might give you some problems if it won't find an
+ *   icon for it( try/catch should be used).
+ *
+ * [Updated]
+ * 
+ * - Added Shell function for getting file extension after getting some commet
+ *   about it, check link below.
+ *   (http://www.codeguru.com/Csharp/Csharp/cs_misc/icons/article.php/c4261/)
+ * - IconFromResource was added for having all the common needed functions for 
+ *   handling icons.
+ * - Readded DestroyIcon and adding GetManagedIcon, after verifying it's needed (thanks DrGui and Kenneth Broendum).
+ * - Removed the IconFromExtension that pulled the icon from the registry (IconFromExtensionShell is default now).
+ * - Fixed IconCount mistake (if the number of icon in the file was 0 and the
+ *   index that was selected was also 0 the ExtractIconEx still got to run and
+ *   crashed (thanks SickLab).
+ * 
+ * contact me at: Gil_Smdt@Hotmail.com
+ * 
+*/
+
+using System;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
@@ -6,123 +30,166 @@ using System.Runtime.InteropServices;
 
 namespace TorrentPatcher
 {
-    public enum IconSize : uint
-    {
-        Large = 0,
-        Small = 1
-    }
+	public enum IconSize :uint
+	{
+		Large = 0x0, //32x32
+		Small = 0x1  //16x16		
+	}
 
-    public static class IconHandler
-    {
-        private const uint SHGFI_ICON = 0x100;
-        private const uint SHGFI_USEFILEATTRIBUTES = 0x10;
+	//the function that will extract the icons from a file
+	public static class IconHandler
+	{
 
-        [StructLayout(LayoutKind.Sequential)]
-        internal struct SHFILEINFO
-        {
-            public IntPtr hIcon;
-            public IntPtr iIcon;
-            public uint dwAttributes;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-            public string szDisplayName;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
-            public string szTypeName;
-        }
+		[StructLayout(LayoutKind.Sequential)]
+		struct SHFILEINFO
+		{
+			public IntPtr hIcon;
+			public IntPtr iIcon;
+			public uint dwAttributes;
+			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+			public string szDisplayName;
+			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
+			public string szTypeName;
+		};
 
-        [DllImport("user32.dll", CharSet=CharSet.Auto)]
-        private static extern bool DestroyIcon(IntPtr handle);
-        [DllImport("Shell32", CharSet=CharSet.Auto)]
-        internal static extern int ExtractIconEx([MarshalAs(UnmanagedType.LPTStr)] string lpszFile, int nIconIndex, IntPtr[] phIconLarge, IntPtr[] phIconSmall, int nIcons);
-        public static Icon GetManagedIcon(ref Icon UnmanagedIcon)
-        {
-            Icon icon = (Icon) UnmanagedIcon.Clone();
-            DestroyIcon(UnmanagedIcon.Handle);
-            return icon;
-        }
+		const uint SHGFI_ICON = 0x100;
+		const uint SHGFI_USEFILEATTRIBUTES = 0x10;
 
-        public static Icon IconFromExtension(string Extension, IconSize Size)
-        {
-            try
-            {
-                if (Extension[0] != '.')
-                {
-                    Extension = '.' + Extension;
-                }
-                SHFILEINFO psfi = new SHFILEINFO();
-                SHGetFileInfo(Extension, 0, ref psfi, (uint) Marshal.SizeOf(psfi), (uint) (((IconSize) 0x110) | Size));
-                Icon icon = Icon.FromHandle(psfi.hIcon);
-                return GetManagedIcon(ref icon);
-            }
-            catch (Exception)
-            {
-                return null;
-            }
-        }
+		[DllImport("shell32.dll", CharSet = CharSet.Auto)]
+		internal extern static int ExtractIconEx(
+			[MarshalAs(UnmanagedType.LPTStr)] 
+			string lpszFile,                //size of the icon
+			int nIconIndex,                 //index of the icon (in case we have more then 1 icon in the file
+			IntPtr[] phIconLarge,           //32x32 icon
+			IntPtr[] phIconSmall,           //16x16 icon
+			int nIcons);                    //how many to get
 
-        public static Icon IconFromFile(string Filename, IconSize Size, int Index)
-        {
-            int num = ExtractIconEx(Filename, -1, null, null, 0);
-            if ((num <= 0) || (Index >= num))
-            {
-                return null;
-            }
-            IntPtr[] phIconSmall = new IntPtr[1];
-            if (Size == IconSize.Small)
-            {
-                ExtractIconEx(Filename, Index, null, phIconSmall, 1);
-            }
-            else
-            {
-                ExtractIconEx(Filename, Index, phIconSmall, null, 1);
-            }
-            Icon icon = Icon.FromHandle(phIconSmall[0]);
-            return GetManagedIcon(ref icon);
-        }
+		[DllImport("shell32.dll")]
+		static extern IntPtr SHGetFileInfo(
+			string pszPath,				//path
+			uint dwFileAttributes,		//attributes
+			ref SHFILEINFO psfi,		//struct pointer
+			uint cbSizeFileInfo,		//size
+			uint uFlags);	//flags
 
-        public static Icon IconFromResource(string ResourceName)
-        {
-            return new Icon(Assembly.GetCallingAssembly().GetManifestResourceStream(ResourceName));
-        }
+		//we need this function to release the unmanaged resource,
+		//the unmanaged resource will be copies to a managed one and it will be returned.
+		[DllImport("user32.dll", CharSet = CharSet.Auto)]
+		extern static bool DestroyIcon(IntPtr handle);
 
-        public static Icon[] IconsFromFile(string Filename, IconSize Size)
-        {
-            int nIcons = ExtractIconEx(Filename, -1, null, null, 0);
-            IntPtr[] phIconSmall = new IntPtr[nIcons];
-            if (Size == IconSize.Small)
-            {
-                ExtractIconEx(Filename, 0, null, phIconSmall, nIcons);
-            }
-            else
-            {
-                ExtractIconEx(Filename, 0, phIconSmall, null, nIcons);
-            }
-            Icon[] iconArray = new Icon[nIcons];
-            for (int i = 0; i < nIcons; i++)
-            {
-                Icon unmanagedIcon = Icon.FromHandle(phIconSmall[i]);
-                iconArray[i] = GetManagedIcon(ref unmanagedIcon);
-            }
-            return iconArray;
-        }
+		//will return an array of icons 
+		public static Icon[] IconsFromFile(string Filename, IconSize Size)
+		{
+			int IconCount = ExtractIconEx(Filename, -1, null, null, 0); //checks how many icons.
+			IntPtr[] IconPtr = new IntPtr[IconCount];
+			Icon TempIcon;
 
-        public static void SaveIcon(Icon SourceIcon, string IconFilename)
-        {
-            FileStream outputStream = new FileStream(IconFilename, FileMode.Create);
-            SourceIcon.Save(outputStream);
-            outputStream.Close();
-        }
+			//extracts the icons by the size that was selected.
+			if (Size == IconSize.Small)
+			{
+				ExtractIconEx(Filename, 0, null, IconPtr, IconCount);
+			}
+			else
+			{
+				ExtractIconEx(Filename, 0, IconPtr, null, IconCount);
+			}
 
-        public static void SaveIconFromImage(Image SourceImage, string IconFilename, IconSize DestenationIconSize)
-        {
-            Size newSize = (DestenationIconSize == IconSize.Large) ? new Size(0x20, 0x20) : new Size(0x10, 0x10);
-            Icon icon = Icon.FromHandle(new Bitmap(SourceImage, newSize).GetHicon());
-            FileStream outputStream = new FileStream(IconFilename, FileMode.Create);
-            icon.Save(outputStream);
-            outputStream.Close();
-        }
+			Icon[] IconList = new Icon[IconCount];
 
-        [DllImport("shell32.dll")]
-        private static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbSizeFileInfo, uint uFlags);
-    }
+			//gets the icons in a list.
+			for (int i = 0; i < IconCount; i++)
+			{
+				TempIcon = (Icon)Icon.FromHandle(IconPtr[i]);
+				IconList[i] = GetManagedIcon(ref TempIcon);
+			}
+
+			return IconList;
+		}
+
+		//extract one selected by index icon from a file.
+		public static Icon IconFromFile(string Filename, IconSize Size, int Index)
+		{
+			int IconCount = ExtractIconEx(Filename, -1, null, null, 0); //checks how many icons.
+			if (IconCount <= 0 || Index >= IconCount) { return null; } // no icons were found.
+
+			Icon TempIcon;
+			IntPtr[] IconPtr = new IntPtr[1];
+
+			//extracts the icon that we want in the selected size.
+			if (Size == IconSize.Small)
+			{
+				ExtractIconEx(Filename, Index, null, IconPtr, 1);
+			}
+			else
+			{
+				ExtractIconEx(Filename, Index, IconPtr, null, 1);
+			}
+
+			TempIcon = Icon.FromHandle(IconPtr[0]);
+
+			return GetManagedIcon(ref TempIcon);
+		}
+
+		public static Icon IconFromExtension(string Extension, IconSize Size)
+		{
+			try
+			{
+				Icon TempIcon;
+
+				//add '.' if necessary
+				if (Extension[0] != '.') { Extension = '.' + Extension; }
+
+				//temp struct for getting file shell info
+				SHFILEINFO TempFileInfo = new SHFILEINFO();
+
+				SHGetFileInfo(
+					Extension,
+					0,
+					ref TempFileInfo,
+					(uint)Marshal.SizeOf(TempFileInfo),
+					SHGFI_ICON | SHGFI_USEFILEATTRIBUTES | (uint)Size);
+
+				TempIcon = (Icon)Icon.FromHandle(TempFileInfo.hIcon);
+				return GetManagedIcon(ref TempIcon);
+			}
+			catch (Exception e)
+			{
+				System.Diagnostics.Debug.WriteLine("error while trying to get icon for " + Extension + " :" + e.Message);
+				return null;
+			}
+		}
+
+		public static Icon IconFromResource(string ResourceName)
+		{
+			Assembly TempAssembly = Assembly.GetCallingAssembly();
+			return new Icon(TempAssembly.GetManifestResourceStream(ResourceName));
+		}
+
+		public static void SaveIconFromImage(Image SourceImage, string IconFilename, IconSize DestenationIconSize)
+		{
+			Size NewIconSize = DestenationIconSize == IconSize.Large ? new Size(32, 32) : new Size(16, 16);
+
+			Bitmap RawImage = new Bitmap(SourceImage, NewIconSize);
+			Icon TempIcon = Icon.FromHandle(RawImage.GetHicon());
+			FileStream NewIconStream = new FileStream(IconFilename, FileMode.Create);
+
+			TempIcon.Save(NewIconStream);
+
+			NewIconStream.Close();
+		}
+
+		public static void SaveIcon(Icon SourceIcon, string IconFilename)
+		{
+			FileStream NewIconStream = new FileStream(IconFilename, FileMode.Create);
+			SourceIcon.Save(NewIconStream);
+			NewIconStream.Close();
+		}
+
+		public static Icon GetManagedIcon(ref Icon UnmanagedIcon)
+		{
+			Icon ManagedIcon = (Icon)UnmanagedIcon.Clone();
+			DestroyIcon(UnmanagedIcon.Handle);
+			return ManagedIcon;
+		}
+	}
 }
-
