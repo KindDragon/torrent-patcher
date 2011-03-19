@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace TorrentPatcher.TorrentLoader
+namespace TorrentUtilities
 {
     /// <summary>
     /// A Class for the files in the torrent

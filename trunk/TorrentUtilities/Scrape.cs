@@ -3,11 +3,11 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using System.Web;
-using System.Windows.Forms;
+using System.Reflection;
 
-namespace TorrentPatcher.TorrentLoader
+namespace TorrentUtilities
 {
-    class Scrape
+    public class Scrape
     {
         private PeersRecievedCallback _Callback;
         private int _index;
@@ -44,7 +44,9 @@ namespace TorrentPatcher.TorrentLoader
             try
             {
                 HttpWebRequest request = (HttpWebRequest) WebRequest.Create(_URL);
-                request.UserAgent = "TorrentPatcher/" + Application.ProductVersion;
+                Assembly myAssembly = Assembly.GetExecutingAssembly();
+                AssemblyName myAssemblyName = myAssembly.GetName();
+                request.UserAgent = "TorrentPatcher/" + myAssemblyName.Version;
                 ScrapeInfo info = new ScrapeInfo(new StreamReader(request.GetResponse().GetResponseStream()).ReadToEnd());
                 _syncObject.Invoke(new dCallback(ThreadCallBack), new object[] { _index, info });
             }

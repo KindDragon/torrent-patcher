@@ -1,4 +1,4 @@
-namespace TorrentPatcher
+namespace TorrentUtilities
 {
 	public static class str
 	{
