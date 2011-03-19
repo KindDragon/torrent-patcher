@@ -113,35 +113,11 @@
     <Compile Include="IniFile.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DataType.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Program.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="TaskInfo.cs" />
-    <Compile Include="TorrentLoader\Scrape.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TorrentLoader\ScrapeInfo.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="str.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="StructureExport.cs" />
-    <Compile Include="TorrentLoader\TFile.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TorrentLoader\TorrentParser.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TorrentLoader\TorrentWriter.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TorrentLoader\TVal.cs">
-      <SubType>Code</SubType>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
@@ -176,6 +152,12 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="TorrentPatcher.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="TorrentUtilities\TorrentUtilities.csproj">
+      <Project>{98D97DA0-2227-420A-B394-4A73063A62CB}</Project>
+      <Name>TorrentUtilities</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

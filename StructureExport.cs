@@ -1,5 +1,6 @@
 using System.IO;
 using System.Windows.Forms;
+using TorrentUtilities;
 
 namespace TorrentPatcher
 {

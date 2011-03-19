@@ -1,8 +1,8 @@
 using System;
 
-namespace TorrentPatcher.TorrentLoader
+namespace TorrentUtilities
 {
-    class ScrapeInfo
+    public class ScrapeInfo
     {
         long _Seeders;
         long _Leechers;

@@ -5,7 +5,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace TorrentPatcher.TorrentLoader
+namespace TorrentUtilities
 {
     public delegate void FileCallback(int Precent);
 

@@ -383,6 +383,7 @@
             this.btnStructExport.TabIndex = 24;
             this.btnStructExport.Text = "Экспорт";
             this.btnStructExport.UseVisualStyleBackColor = true;
+            this.btnStructExport.Click += new System.EventHandler(this.btnStructExport_Click);
             // 
             // btnStructDown
             // 
@@ -397,6 +398,7 @@
             this.btnStructDown.TabIndex = 22;
             this.btnStructDown.Text = "6";
             this.btnStructDown.UseVisualStyleBackColor = true;
+            this.btnStructDown.Click += new System.EventHandler(this.btnStructDown_Click);
             // 
             // btnStructUp
             // 
@@ -411,6 +413,7 @@
             this.btnStructUp.TabIndex = 21;
             this.btnStructUp.Text = "5";
             this.btnStructUp.UseVisualStyleBackColor = true;
+            this.btnStructUp.Click += new System.EventHandler(this.btnStructUp_Click);
             // 
             // btnStructReload
             // 
@@ -423,6 +426,7 @@
             this.btnStructReload.TabIndex = 23;
             this.btnStructReload.Text = "Обновить";
             this.btnStructReload.UseVisualStyleBackColor = true;
+            this.btnStructReload.Click += new System.EventHandler(this.btnStructReload_Click);
             // 
             // btnStructEdit
             // 
@@ -436,6 +440,7 @@
             this.btnStructEdit.TabIndex = 20;
             this.btnStructEdit.Text = "Правка";
             this.btnStructEdit.UseVisualStyleBackColor = true;
+            this.btnStructEdit.Click += new System.EventHandler(this.btnStructEdit_Click);
             // 
             // btnStructRemove
             // 
@@ -451,6 +456,7 @@
             this.tltMain.SetToolTip(this.btnStructRemove, "Внимание! Нарушение структуры торрента может привести к непредсказуемым последств" +
         "иям!!!");
             this.btnStructRemove.UseVisualStyleBackColor = true;
+            this.btnStructRemove.Click += new System.EventHandler(this.btnStructRemove_Click);
             // 
             // btnStructAdd
             // 
@@ -464,6 +470,7 @@
             this.btnStructAdd.TabIndex = 18;
             this.btnStructAdd.Text = "Добавить";
             this.btnStructAdd.UseVisualStyleBackColor = true;
+            this.btnStructAdd.Click += new System.EventHandler(this.btnStructAdd_Click);
             // 
             // lblStructPos
             // 

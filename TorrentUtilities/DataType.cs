@@ -1,4 +1,4 @@
-﻿namespace TorrentPatcher
+﻿namespace TorrentUtilities
 {
     /// <summary>
     /// The Data types
