@@ -1,7 +1,19 @@
 ﻿using System;
 
 namespace TorrentUtilities
-{   
+{
+	/// <summary>
+	/// The Data types
+	/// </summary>
+	public enum DataType
+	{
+		String,
+		Int,
+		List,
+		Dictionary,
+		Byte
+	}
+
 	/// <summary>
 	/// Class to store dictionary values
 	/// </summary>
@@ -26,7 +38,7 @@ namespace TorrentUtilities
 			get { return _object; }
 		}
 
-		public string GetImageKey()
+		public string GetTypeStr()
 		{
 			switch (_type)
 			{
@@ -70,7 +82,7 @@ namespace TorrentUtilities
 
 		public override string ToString()
 		{
-			string type = "(" + GetImageKey() + ")";
+			string type = "(" + GetTypeStr() + ")";
 			switch (_type)
 			{
 				case DataType.Int:
@@ -78,7 +90,6 @@ namespace TorrentUtilities
 						long val = (long)_object;
 						return type + "=" + val.ToString();
 					}
-
 				case DataType.Byte:
 					{
 						string str = "";

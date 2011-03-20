@@ -29,7 +29,7 @@
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <ApplicationVersion>1.9.5.%2a</ApplicationVersion>
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
@@ -118,6 +118,12 @@
     </Compile>
     <Compile Include="TaskInfo.cs" />
     <Compile Include="StructureExport.cs" />
+    <Compile Include="TorrentUtilities\Scrape.cs" />
+    <Compile Include="TorrentUtilities\ScrapeInfo.cs" />
+    <Compile Include="TorrentUtilities\TFile.cs" />
+    <Compile Include="TorrentUtilities\TorrentParser.cs" />
+    <Compile Include="TorrentUtilities\TorrentWriter.cs" />
+    <Compile Include="TorrentUtilities\TVal.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
@@ -145,6 +151,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Properties\app.manifest" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -152,12 +159,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="TorrentPatcher.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="TorrentUtilities\TorrentUtilities.csproj">
-      <Project>{98D97DA0-2227-420A-B394-4A73063A62CB}</Project>
-      <Name>TorrentUtilities</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

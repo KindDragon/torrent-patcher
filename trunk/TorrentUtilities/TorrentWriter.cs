@@ -84,8 +84,7 @@ namespace TorrentUtilities
 		{
 			//Data=Encoding.
 			//_torrent.Write(Data.Length.ToString() + ":");
-			UTF8Encoding enc = new UTF8Encoding();
-			WriteData(enc.GetBytes(Data));
+			WriteData(System.Text.Encoding.Default.GetBytes(Data));
 		}
 
 		private void WriteData(TVal Data)
