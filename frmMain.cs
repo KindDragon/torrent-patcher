@@ -268,6 +268,7 @@ namespace TorrentPatcher
 			TreeNode node = new TreeNode(key + val.ToString());
 			node.Name = key;
 			node.Tag = val;
+			SetNodeImage(node);
 			return node;
 		}
 
@@ -281,6 +282,7 @@ namespace TorrentPatcher
 		{
 			TreeNode node = rootnode.Nodes.Add(key, key + val.ToString());
 			node.Tag = val;
+			SetNodeImage(node);
 			return node;
 		}
 
@@ -1360,7 +1362,6 @@ namespace TorrentPatcher
 			string key = NodePath.Substring(NodePath.LastIndexOf('/') + 1);
 			string nodePath = NodePath.Substring(0, NodePath.LastIndexOf('/'));
 			node = AddNode(FindNode(nodePath), key, val);
-			SetNodeImage(node);
 			return node;
 		}
 
@@ -1389,8 +1390,7 @@ namespace TorrentPatcher
 			foreach (string key in ValToAdd.Keys)
 			{
 				TVal val = ValToAdd[key];
-				TreeNode node = ParentTN.Nodes.Add(key, key + val.ToString());
-				node.Tag = val;
+				TreeNode node = AddNode(ParentTN, key, val);
 				switch (val.Type)
 				{
 					case DataType.List:
@@ -1401,7 +1401,6 @@ namespace TorrentPatcher
 						PopulateStructure(node, (Dictionary<string, TVal>)val.dObject);
 						break;
 				}
-				SetNodeImage(node);
 			}
 		}
 
@@ -1410,8 +1409,7 @@ namespace TorrentPatcher
 			int num = 0;
 			foreach (TVal val in ValToAdd)
 			{
-				TreeNode node = ParentTN.Nodes.Add(num.ToString() + val.ToString());
-				node.Tag = val;
+				TreeNode node = AddNode(ParentTN, num.ToString(), val);
 				switch (val.Type)
 				{
 					case DataType.List:
@@ -1481,7 +1479,7 @@ namespace TorrentPatcher
 		{
 			Debug.Assert(Node.Tag != null);
 			TVal val = (TVal)Node.Tag;
-			Node.ImageKey = val.GetImageKey();
+			Node.ImageKey = val.GetTypeStr();
 			Node.SelectedImageKey = Node.ImageKey;
 		}
 
@@ -1577,20 +1575,21 @@ namespace TorrentPatcher
 
 		private void UpdateStructCallBack(string Path, string Name, TVal Value)
 		{
-			string str;
 			if (Path.EndsWith(Name))
 			{
-				str = Name + Value.ToString();
-				FindOrCreateNode(Path, Value).Text = str;
-				trvTorrent.SelectedNode = FindNode(Path);
+				TreeNode node = FindOrCreateNode(Path, Value);
+				node.Text = Name + Value.ToString();
+				node.Tag = Value;
+				trvTorrent.SelectedNode = node;
 			}
 			else
 			{
 				TreeNode node = FindNode(Path);
 				TreeNode parent = node.Parent;
 				Name = CheckExist(parent, Name);
-				str = Name + Value.ToString();
 				node.Name = Name;
+				node.Text = Name + Value.ToString();
+				node.Tag = Value;
 				trvTorrent.SelectedNode = node;
 			}
 			if (dNode.NodeType(trvTorrent.SelectedNode.Parent) == DataType.List)
@@ -1618,10 +1617,8 @@ namespace TorrentPatcher
 					string text = lstTrackers.Items[i].Text;
 					TVal val = new TVal(DataType.String, text);
 					TreeNode node = AddNode("0", val);
-					SetNodeImage(node);
 					TVal val2 = new TVal(DataType.List);
 					TreeNode node2 = AddNode(list.Count.ToString(), val2);
-					SetNodeImage(node2);
 					node2.Nodes.Add(node);
 					list.Add(node2);
 				}

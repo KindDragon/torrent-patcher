@@ -20,7 +20,7 @@ Notes:
 
 Useful Links:
 
-    * http://wiki.theory.org/BitTorrentSpecificatin - Bittorrent Protocol Specification v1.0
+    * http://wiki.theory.org/BitTorrentSpecification#Metainfo_File_Structure - Bittorrent Protocol Specification v1.0
     * http://www.bittorrent.org/protocol.html - BitTorrent.org For Developers
     * http://torrentspy.sourceforge.net/ - A program to do show all the available information in a torrent
     * http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=3360&lngWId=10 - A torrent parser class written in VB.Net
