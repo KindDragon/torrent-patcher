@@ -164,7 +164,6 @@ namespace TorrentPatcher
 			string[] result = new string[lstTrackersAdd.Items.Count - 1];
 			int[] numbers = new int[lstTrackersAdd.Items.Count - 1];
 			string str = null;
-			new Regex("(http|https|udp)://(.*)");
 			Stopwatch stopwatch = new Stopwatch();
 			stopwatch.Start();
 			numbers = CheckTrackers();
@@ -200,15 +199,17 @@ namespace TorrentPatcher
 
 		private void btnLaunchBrowse_Click(object sender, EventArgs e)
 		{
-			OpenFileDialog dialog = new OpenFileDialog();
-			dialog.CheckFileExists = true;
-			dialog.CheckPathExists = true;
-			dialog.Filter = "Исполнимые файлы (*.exe)|*.exe|Все файлы (*.*)|*.*";
-			dialog.FilterIndex = 0;
-			dialog.Multiselect = false;
-			if (dialog.ShowDialog() == DialogResult.OK)
+			using (OpenFileDialog dialog = new OpenFileDialog())
 			{
-				txtLaunchPath.Text = dialog.FileName;
+				dialog.CheckFileExists = true;
+				dialog.CheckPathExists = true;
+				dialog.Filter = "Исполнимые файлы (*.exe)|*.exe|Все файлы (*.*)|*.*";
+				dialog.FilterIndex = 0;
+				dialog.Multiselect = false;
+				if (dialog.ShowDialog() == DialogResult.OK)
+				{
+					txtLaunchPath.Text = dialog.FileName;
+				}
 			}
 		}
 
@@ -217,7 +218,10 @@ namespace TorrentPatcher
 			string name = dNode.NodeVal(FindNode("root/encoding"));
 			name = (name != "") ? name : "UTF-8";
 			Encoding enc = Encoding.GetEncoding(name);
-			var tw = new TorrentWriter(txtTorrentPath.Text, ConvertToDict(trvTorrent.Nodes["root"]), enc);
+			using (TorrentWriter tw = new TorrentWriter(UpdateDictionary(trvTorrent.Nodes["root"])))
+			{
+				tw.Write(txtTorrentPath.Text);
+			}
 			LoadTorrent(txtTorrentPath.Text);
 		}
 
@@ -258,8 +262,9 @@ namespace TorrentPatcher
 			}
 			else
 			{
-				new frmEdit(false, dNode.NodePath(trvTorrent.SelectedNode), DataType.String, "", parentList, 
-					new dSructureUpdate(UpdateStructCallBack));
+				using (new frmEdit(false, dNode.NodePath(trvTorrent.SelectedNode), DataType.String, "", parentList,
+					new dSructureUpdate(UpdateStructCallBack)))
+				{ }
 			}
 		}
 
@@ -279,6 +284,14 @@ namespace TorrentPatcher
 		}
 
 		private TreeNode AddNode(TreeNode rootnode, string key, TVal val)
+		{
+			TreeNode node = rootnode.Nodes.Add(key, key + val.ToString());
+			node.Tag = val;
+			SetNodeImage(node);
+			return node;
+		}
+
+		private TreeNode AddNode(TreeView rootnode, string key, TVal val)
 		{
 			TreeNode node = rootnode.Nodes.Add(key, key + val.ToString());
 			node.Tag = val;
@@ -309,8 +322,9 @@ namespace TorrentPatcher
 				else
 				{
 					bool parentList = dNode.NodeType(trvTorrent.SelectedNode.Parent) == DataType.List;
-					new frmEdit(true, dNode.NodePath(trvTorrent.SelectedNode), type, 
-						dNode.NodeVal(trvTorrent.SelectedNode), parentList, new dSructureUpdate(UpdateStructCallBack));
+					using (new frmEdit(true, dNode.NodePath(trvTorrent.SelectedNode), type,
+						dNode.NodeVal(trvTorrent.SelectedNode), parentList, new dSructureUpdate(UpdateStructCallBack)))
+					{ }
 				}
 			}
 		}
@@ -357,45 +371,47 @@ namespace TorrentPatcher
 
 		private void buttonTrackersFile_Click(object sender, EventArgs e)
 		{
-			OpenFileDialog dialog = new OpenFileDialog();
-			dialog.CheckFileExists = true;
-			dialog.CheckPathExists = true;
-			dialog.Filter = "INI файлы (*.ini)|*.ini|Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*";
-			dialog.FilterIndex = 0;
-			dialog.Multiselect = false;
-			if (dialog.ShowDialog() != DialogResult.OK)
-				return;
-
-			try
+			using (OpenFileDialog dialog = new OpenFileDialog())
 			{
-				IniFile initrackers = new IniFile(dialog.FileName);
-				ini.IniWriteValue("Settings", "TrackersFile", dialog.FileName);
-				int Mi = 0;
-				cmbCity.Items.Clear();
-				for (int i = 1; i <= initrackers.IniReadIntValue("Город", "Количество"); i++)
-				{
-					cmbCity.Items.Add(initrackers.IniReadValue("Город", i));
-					Mi = i - 1;
-				}
-				int trackerIniIndex = Convert.ToInt32(ini.IniReadArray("Settings", "TrackerIniIndex")[0]);
-				if (Mi >= trackerIniIndex)
-				{
-					cmbCity.SelectedIndex = trackerIniIndex;
-				}
-				else
-				{
-					cmbCity.SelectedIndex = 0;
-				}
-				cmbCity.Refresh();
+				dialog.CheckFileExists = true;
+				dialog.CheckPathExists = true;
+				dialog.Filter = "INI файлы (*.ini)|*.ini|Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*";
+				dialog.FilterIndex = 0;
+				dialog.Multiselect = false;
+				if (dialog.ShowDialog() != DialogResult.OK)
+					return;
 
-				if (!chkTrackersCheck.Checked)
+				try
 				{
-					btnCheckTrackers_Click(null, null);
+					IniFile initrackers = new IniFile(dialog.FileName);
+					ini.IniWriteValue("Settings", "TrackersFile", dialog.FileName);
+					int Mi = 0;
+					cmbCity.Items.Clear();
+					for (int i = 1; i <= initrackers.IniReadIntValue("Город", "Количество"); i++)
+					{
+						cmbCity.Items.Add(initrackers.IniReadValue("Город", i));
+						Mi = i - 1;
+					}
+					int trackerIniIndex = Convert.ToInt32(ini.IniReadArray("Settings", "TrackerIniIndex")[0]);
+					if (Mi >= trackerIniIndex)
+					{
+						cmbCity.SelectedIndex = trackerIniIndex;
+					}
+					else
+					{
+						cmbCity.SelectedIndex = 0;
+					}
+					cmbCity.Refresh();
+
+					if (!chkTrackersCheck.Checked)
+					{
+						btnCheckTrackers_Click(null, null);
+					}
 				}
-			}
-			catch (System.Exception /*ex*/)
-			{
-				
+				catch (System.Exception /*ex*/)
+				{
+
+				}
 			}
 		}
 
@@ -405,40 +421,10 @@ namespace TorrentPatcher
 			changeNT.Tag = val;
 		}
 
-		private void ChangeInt(TreeNode changeNT, string name, string NewInt)
-		{
-			TVal val = new TVal(DataType.Int, NewInt);
-			ChangeValue(changeNT, name, val);
-		}
-
-		private void ChangeInt(TreeNode changeNT, string name, string NewInt, bool DeleteIfEmpty)
-		{
-			if ((NewInt == "") && DeleteIfEmpty)
-			{
-				changeNT.Remove();
-			}
-			else
-			{
-				ChangeString(changeNT, name, NewInt);
-			}
-		}
-
 		private void ChangeString(TreeNode changeTN, string name, string NewString)
 		{
 			TVal val = new TVal(DataType.String, NewString);
 			ChangeValue(changeTN, name, val);
-		}
-
-		private void ChangeString(TreeNode changeTN, string name, string NewString, bool DeleteIfEmpty)
-		{
-			if ((NewString == "") && DeleteIfEmpty)
-			{
-				changeTN.Remove();
-			}
-			else
-			{
-				ChangeString(changeTN, name, NewString);
-			}
 		}
 
 		private void CheckCommandLine()
@@ -940,44 +926,46 @@ namespace TorrentPatcher
 			Ctrl.Enabled = true;
 		}
 
-		private Dictionary<string, TVal> ConvertToDict(TreeNode Node)
+		private TVal UpdateDictionary(TreeNode Node)
 		{
+			TVal val = (TVal)Node.Tag;
+			Debug.Assert(val.Type == DataType.Dictionary);
 			Dictionary<string, TVal> dictionary = new Dictionary<string, TVal>();
+			val = new TVal(DataType.Dictionary, dictionary);
 			foreach (TreeNode node in Node.Nodes)
-			{
-				dictionary.Add(node.Name, ConvertTree(node));
-			}
-			return dictionary;
+				dictionary.Add(node.Name, UpdateValue(node));
+			return val;
 		}
 
-		private List<TVal> ConvertToList(TreeNode Node)
+		private TVal UpdateList(TreeNode Node)
 		{
+			TVal val = (TVal)Node.Tag;
+			Debug.Assert(val.Type == DataType.List);
 			List<TVal> list = new List<TVal>();
+			val = new TVal(DataType.List, list);
 			foreach (TreeNode node in Node.Nodes)
-			{
-				list.Add(ConvertTree(node));
-			}
-			return list;
+				list.Add(UpdateValue(node));
+			return val;
 		}
 
-		private TVal ConvertTree(TreeNode Node)
+		private TVal UpdateValue(TreeNode Node)
 		{
-			switch (dNode.NodeType(Node))
+			TVal val = (TVal)Node.Tag;
+			switch (val.Type)
 			{
-				case DataType.Int:
-					return new TVal(DataType.Int, long.Parse(dNode.NodeVal(Node)));
-
-				case DataType.List:
-					return new TVal(DataType.List, ConvertToList(Node));
-
 				case DataType.Dictionary:
-					return new TVal(DataType.Dictionary, ConvertToDict(Node));
+					val = UpdateDictionary(Node);
+					break;
+				case DataType.List:
+					val = UpdateList(Node);
+					break;
+				case DataType.Byte:
+					if (dNode.NodePath(Node) == "root/info/pieces")
+						val = new TVal(DataType.Byte, _torrent.GetPieces());
+					break;
 			}
-			if (dNode.NodePath(Node) == "root/info/pieces")
-			{
-				return new TVal(DataType.Byte, _torrent.Pieces);
-			}
-			return new TVal(DataType.String, dNode.NodeVal(Node));
+			Node.Tag = val;
+			return val;
 		}
 
 		private void EditStructFile(int index, string Name, string Path)
@@ -991,10 +979,10 @@ namespace TorrentPatcher
 				TreeNode node = FindNode("root/info/files/" + index.ToString() + "/path");
 				node.Nodes.Clear();
 				int num = 0;
-				foreach (string str in (Path + @"\" + Name).Split(new string[] { @"\" }, StringSplitOptions.RemoveEmptyEntries))
+				string[] elements = (Path + @"\" + Name).Split(new string[] { @"\" }, StringSplitOptions.RemoveEmptyEntries);
+				foreach (string str in elements)
 				{
-					string text = num.ToString() + "(s)[" + str.Length.ToString() + "]=" + str;
-					node.Nodes.Add("", text, "s").SelectedImageKey = "s";
+					AddNode(node, num.ToString(), str);
 					num++;
 				}
 			}
@@ -1008,20 +996,22 @@ namespace TorrentPatcher
 
 		private void Export(bool StructExport)
 		{
-			SaveFileDialog dialog = new SaveFileDialog();
-			dialog.OverwritePrompt = true;
-			dialog.Title = "Export";
-			dialog.FileName = Path.GetFileNameWithoutExtension(txtTorrentPath.Text) + (StructExport ? ".Structure" : ".Files") + ".txt";
-			dialog.Filter = "Structure Export|*.*|File List Export|*.*";
-			dialog.FilterIndex = StructExport ? 1 : 2;
-			if (dialog.ShowDialog() == DialogResult.OK)
+			using (SaveFileDialog dialog = new SaveFileDialog())
 			{
-				RequireLoad.ForEach(new Action<Control>(ControlDisable));
-				if (dialog.FilterIndex == 1)
+				dialog.OverwritePrompt = true;
+				dialog.Title = "Export";
+				dialog.FileName = Path.GetFileNameWithoutExtension(txtTorrentPath.Text) + (StructExport ? ".Structure" : ".Files") + ".txt";
+				dialog.Filter = "Structure Export|*.*|File List Export|*.*";
+				dialog.FilterIndex = StructExport ? 1 : 2;
+				if (dialog.ShowDialog() == DialogResult.OK)
 				{
-					ExportStructure(dialog.FileName);
+					RequireLoad.ForEach(new Action<Control>(ControlDisable));
+					if (dialog.FilterIndex == 1)
+					{
+						ExportStructure(dialog.FileName);
+					}
+					RequireLoad.ForEach(new Action<Control>(ControlEnable));
 				}
-				RequireLoad.ForEach(new Action<Control>(ControlEnable));
 			}
 		}
 
@@ -1030,7 +1020,10 @@ namespace TorrentPatcher
 			tslStatus.Text = "Экспорт структуры...";
 			try
 			{
-				var se = new StructureExport(txtTorrentName.Text, trvTorrent.Nodes[0], FileName, trvTorrent.GetNodeCount(true));
+				using (var se = new StructureExport())
+				{
+					se.WriteToFile(txtTorrentName.Text, trvTorrent.Nodes[0], FileName, trvTorrent.GetNodeCount(true));
+				}
 				tslStatus.Text = "Структура успешно экспортирована";
 			}
 			catch
@@ -1178,7 +1171,7 @@ namespace TorrentPatcher
 		{
 			List<ListViewItem> list = new List<ListViewItem>();
 			list.Add(AddTracker(_torrent.AnnounceURL));
-			foreach (string str in _torrent.AnnounceList)
+			foreach (string str in _torrent.GetAnnounceList())
 			{
 				if (str != _torrent.AnnounceURL)
 				{
@@ -1331,15 +1324,12 @@ namespace TorrentPatcher
 		private TreeNode FindNode(string NodePath)
 		{
 			TreeNode node;
-			try
-			{
-				node = trvTorrent.Nodes[NodePath.Substring(0, NodePath.IndexOf("/"))];
-			}
-			catch
-			{
+			int ind = NodePath.IndexOf("/");
+			if (ind <= 0)
 				return trvTorrent.Nodes[NodePath];
-			}
-			NodePath = NodePath.Remove(0, NodePath.IndexOf("/") + 1);
+
+			node = trvTorrent.Nodes[NodePath.Substring(0, ind)];
+			NodePath = NodePath.Remove(0, ind + 1);
 			foreach (string str in NodePath.Split(new char[] { '/' }))
 			{
 				if (dNode.NodeType(node) == DataType.List)
@@ -1394,11 +1384,11 @@ namespace TorrentPatcher
 				switch (val.Type)
 				{
 					case DataType.List:
-						PopulateStructure(node, (List<TVal>)val.dObject);
+						PopulateStructure(node, (List<TVal>)val);
 						break;
 
 					case DataType.Dictionary:
-						PopulateStructure(node, (Dictionary<string, TVal>)val.dObject);
+						PopulateStructure(node, (Dictionary<string, TVal>)val);
 						break;
 				}
 			}
@@ -1413,11 +1403,11 @@ namespace TorrentPatcher
 				switch (val.Type)
 				{
 					case DataType.List:
-						PopulateStructure(node, (List<TVal>)val.dObject);
+						PopulateStructure(node, (List<TVal>)val);
 						break;
 
 					case DataType.Dictionary:
-						PopulateStructure(node, (Dictionary<string, TVal>)val.dObject);
+						PopulateStructure(node, (Dictionary<string, TVal>)val);
 						break;
 				}
 				SetNodeImage(node);
@@ -1497,10 +1487,8 @@ namespace TorrentPatcher
 			trvTorrent.SuspendLayout();
 			trvTorrent.BeginUpdate();
 			trvTorrent.Nodes.Clear();
-			TreeNode node = trvTorrent.Nodes.Add("root", "root(d)");
-			node.Tag = new TVal(DataType.Dictionary, _torrent.Root);
-			node.ImageKey = "d";
-			node.SelectedImageKey = "d";
+			TVal val = new TVal(DataType.Dictionary, _torrent.Root);
+			TreeNode node = AddNode(trvTorrent, "root", val);
 			PopulateStructure(node, _torrent.Root);
 			node.Expand();
 			node.Nodes["info"].Expand();
@@ -1617,13 +1605,13 @@ namespace TorrentPatcher
 					string text = lstTrackers.Items[i].Text;
 					TVal val = new TVal(DataType.String, text);
 					TreeNode node = AddNode("0", val);
-					TVal val2 = new TVal(DataType.List);
+					TVal val2 = new TVal(DataType.List, null);
 					TreeNode node2 = AddNode(list.Count.ToString(), val2);
 					node2.Nodes.Add(node);
 					list.Add(node2);
 				}
 			}
-			TVal val3 = new TVal(DataType.List);
+			TVal val3 = new TVal(DataType.List, null);
 			TreeNode node3 = FindOrCreateNode("root/announce-list", val3);
 			if (list.Count == 0)
 			{

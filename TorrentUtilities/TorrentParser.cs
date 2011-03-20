@@ -12,7 +12,7 @@ namespace TorrentUtilities
 	/// <summary>
 	/// Parses a torrent file and returns the root dictionary, the sha hash and the files size
 	/// </summary>
-	public class TorrentParser
+	public class TorrentParser : IDisposable
 	{
 		#region Inner vars
 		Dictionary<string, TVal> _root; //The root dictionary
@@ -54,7 +54,7 @@ namespace TorrentUtilities
 				throw new Exception("Torrent File Error");
 			}
 			//Where it all starts, processing the root dictionary
-			_root = ProcessDict();
+			_root = (Dictionary<string,TVal>)ProcessDict();
 			//Calculating the torrent SHA1 hash (the hash of the Info dictionary
 			_HashString = GetSHAHash();
 			//Added 25.4.07
@@ -70,23 +70,24 @@ namespace TorrentUtilities
 		/// Processing the dictionary starting form the file stream position
 		/// </summary>
 		/// <returns>The processed dictionary</returns>
-		Dictionary<string, TVal> ProcessDict()
+		TVal ProcessDict()
 		{
 			//Defining the new dictionary
 			Dictionary<string, TVal> TempDict = new Dictionary<string, TVal>();
+			TVal val = new TVal(DataType.Dictionary, TempDict);
 			//Looping while it's not the end of the dictionary ('e' or in ASCII 101)
 			while (_torrent.PeekChar() != 101)
 			{
 				//Getting the key
-				string key = ProcessString();
+				string key = ReadString();
 				//Checking if this is the Info dictionary start
 				if (key == "info") { _InfoStart = _torrent.BaseStream.Position; }
 				//Checking for binary values
 				if (key == "pieces")
 				{
 					//If this is a binary value,
-					//call the binary valuse handler and add it to the dictionry
-					TempDict.Add(key, ProcessByte());
+					//call the binary value handler and add it to the dictionary
+					TempDict.Add(key, ProcessBytes());
 				}
 				else
 				{
@@ -94,23 +95,24 @@ namespace TorrentUtilities
 					TVal Val = ProcessVal();
 					TempDict.Add(key, Val);
 				}
-				//if this is the end of the info dictonary then this is the _InfoEnd
+				//if this is the end of the info dictionary then this is the _InfoEnd
 				if (key == "info") { _InfoEnd = _torrent.BaseStream.Position - _InfoStart; }
 			}
 			//Getting rid of the dictionary end ("e")
 			_torrent.Read();
 			//Returning the dict.
-			return TempDict;
+			return val;
 		}
 
 		/// <summary>
 		/// List handler
 		/// </summary>
 		/// <returns>The parsed List</returns>
-		List<TVal> ProcessList()
+		TVal ProcessList()
 		{
 			//Defining the new list
 			List<TVal> TempList = new List<TVal>();
+			TVal val = new TVal(DataType.List, TempList);
 			//Lopping while it's not the end of the list ("e")
 			while (char.ConvertFromUtf32(_torrent.PeekChar()) != "e")
 			{
@@ -120,41 +122,66 @@ namespace TorrentUtilities
 			//Getting rid of the list end ("e")
 			_torrent.Read();
 			//Returning the list
-			return TempList;
+			return val;
 		}
 
 		/// <summary>
 		/// String handler
 		/// </summary>
 		/// <returns>The parsed string</returns>
-		string ProcessString()
+		private string ReadString()
 		{
-			//Defining the new string length
-			StringBuilder tempLen = new StringBuilder();
-			//Loop to get string length 
-			do
-			{
-				tempLen.Append(char.ConvertFromUtf32(_torrent.Read()).ToString());
-			}
-			//until ":" comes up
-			while (char.ConvertFromUtf32(_torrent.PeekChar()) != ":");
-			//Getting rid of the length end (":")
-			_torrent.Read();
-
 			//Changed 25.4.07
 			//Reading the string from the file in a byte array form
-			byte[] TempBytes = _torrent.ReadBytes(int.Parse(tempLen.ToString()));
+			byte[] TempBytes = ReadBytes();
 			//Converting it to string
-			string TempString = System.Text.Encoding.Default.GetString(TempBytes);
+			string TempString = System.Text.Encoding.UTF8.GetString(TempBytes);
 			//Returning the string
 			return TempString;
+		}
+
+		/// <summary>
+		/// String handler
+		/// </summary>
+		/// <returns>The parsed string</returns>
+		TVal ProcessString()
+		{
+			//Reading the string from the file in a byte array form
+			byte[] TempBytes = ReadBytes();
+			Encoding Enc = System.Text.Encoding.GetEncoding(
+					"utf-8",
+					new EncoderExceptionFallback(),
+					new DecoderExceptionFallback());
+
+			string TempString = "";
+			//Converting it to string
+			try
+			{
+				TempString = Enc.GetString(TempBytes);
+				Enc = System.Text.Encoding.UTF8;
+			}
+			catch (System.Text.DecoderFallbackException /*ex*/)
+			{				
+				Enc = System.Text.Encoding.Default;
+				TempString = Enc.GetString(TempBytes);
+			}
+			//Returning the string
+			return new TVal(TempString, Enc);
 		}
 
 		/// <summary>
 		/// Processes the special binary value
 		/// </summary>
 		/// <returns>The value in a TVal form</returns>
-		TVal ProcessByte()
+		TVal ProcessBytes()
+		{
+			byte[] tempBytes = ReadBytes();
+
+			//Returning the TVal
+			return new TVal(DataType.Byte, tempBytes);
+		}
+
+		private byte[] ReadBytes()
 		{
 			//Defining the new string length
 			StringBuilder tempLen = new StringBuilder();
@@ -172,15 +199,14 @@ namespace TorrentUtilities
 			byte[] tempBytes = new byte[int.Parse(tempLen.ToString())];
 			//Reading the byte array from the torrent file
 			tempBytes = _torrent.ReadBytes(int.Parse(tempLen.ToString()));
-			//Returning the TVal
-			return new TVal(DataType.Byte, tempBytes);
+			return tempBytes;
 		}
 
 		/// <summary>
 		/// Integers handlers
 		/// </summary>
 		/// <returns>The integer</returns>
-		long ProcessInt()
+		TVal ProcessInt()
 		{
 			//The integer at first will be a string
 			StringBuilder TempString = new StringBuilder();
@@ -193,7 +219,8 @@ namespace TorrentUtilities
 			while (char.ConvertFromUtf32(_torrent.PeekChar()) != "e");
 			//Getting rid of the integer end ("e")
 			_torrent.Read();
-			return long.Parse(TempString.ToString());
+			long value = long.Parse(TempString.ToString());
+			return new TVal(value);
 		}
 
 		/// <summary>
@@ -213,23 +240,23 @@ namespace TorrentUtilities
 					//Getting rid of the dictionary start ("d")
 					_torrent.Read();
 					//Calling the dictionary handler and returning the TVal
-					return new TVal(DataType.Dictionary, ProcessDict());
+					return ProcessDict();
 				//A list ("l")
 				case 'l':
 					//Getting rid of the list start ("l")
 					_torrent.Read();
 					//Calling the list handler and returning the TVal
-					return new TVal(DataType.List, ProcessList());
+					return ProcessList();
 				//An integer ("i")
 				case 'i':
 					//Getting rid of the integer start ("l")
 					_torrent.Read();
 					//Calling the integer handler and returning the TVal
-					return new TVal(DataType.Int, ProcessInt());
+					return ProcessInt();
 				//A string (starts with its length)
 				default:
 					//Calling the string handler and returning the TVal
-					return new TVal(DataType.String, ProcessString());
+					return ProcessString();
 			}
 		}
 
@@ -240,16 +267,18 @@ namespace TorrentUtilities
 		string GetSHAHash()
 		{
 			//Defining the new hash
-			SHA1Managed sha1 = new SHA1Managed();
-			//The info dictionary byte array
-			byte[] infoValueBytes;
-			//Setting the file reader position to the info start
-			_torrent.BaseStream.Position = _InfoStart;
-			//Reading untill InfoEnd
-			infoValueBytes = _torrent.ReadBytes(Convert.ToInt32(_InfoEnd));
-			//Returns the hash as a string
-			_SHAHash = sha1.ComputeHash(infoValueBytes);
-			return BitConverter.ToString(_SHAHash).Replace("-", "");
+			using (SHA1Managed sha1 = new SHA1Managed())
+			{
+				//The info dictionary byte array
+				byte[] infoValueBytes;
+				//Setting the file reader position to the info start
+				_torrent.BaseStream.Position = _InfoStart;
+				//Reading untill InfoEnd
+				infoValueBytes = _torrent.ReadBytes(Convert.ToInt32(_InfoEnd));
+				//Returns the hash as a string
+				_SHAHash = sha1.ComputeHash(infoValueBytes);
+				return BitConverter.ToString(_SHAHash).Replace("-", "");
+			}
 		}
 
 		///// <summary>
@@ -281,21 +310,24 @@ namespace TorrentUtilities
 				long l = 0;
 				int ps = 0;
 				int pl = 0;
-				foreach (TVal tFile in ((List<TVal>)Info["files"].dObject))
+				foreach (TVal tFile in ((List<TVal>)Info["files"]))
 				{
-					Dictionary<string, TVal> tDict = (Dictionary<string, TVal>)tFile.dObject;
+					Dictionary<string, TVal> tDict = (Dictionary<string, TVal>)tFile;
 					ps = (int)(l / this.PieceLength) + 1;
-					l += (long)(tDict["length"].dObject);
+					l += (long)(tDict["length"]);
 					pl = (int)(l / this.PieceLength) + 2 - ps;
-					tempFiles.Add(new TFile((long)tDict["length"].dObject, (List<TVal>)tDict["path"].dObject, ps, pl));
+					long length = (long)tDict["length"];
+					List<TVal> path = (List<TVal>)tDict["path"];
+					tempFiles.Add(new TFile(length, path, ps, pl));
 				}
 				_Size = l;
 			}
 			else
 			{
-				tempFiles.Add(new TFile((long)Info["length"].dObject, (string)Info["name"].dObject, 1, this.Pieces.Length / 20));
-				_Size = (long)Info["length"].dObject;
-
+				long length = (long)Info["length"];
+				string name = (string)Info["name"];
+				tempFiles.Add(new TFile(length, name, 1, GetPieces().Length / 20));
+				_Size = (long)Info["length"];
 			}
 			return tempFiles;
 		}
@@ -317,9 +349,9 @@ namespace TorrentUtilities
 			get { return _HashString; }
 		}
 
-		public byte[] ByteHash
+		public byte[] GetByteHash()
 		{
-			get { return _SHAHash; }
+			return _SHAHash;
 		}
 
 		public long Size
@@ -333,23 +365,20 @@ namespace TorrentUtilities
 			get { return KeyFind(_root, "announce"); }
 		}
 
-		public string[] AnnounceList
+		public string[] GetAnnounceList()
 		{
-			get
+			if (!(_root.ContainsKey("announce-list"))) { return new string[] { }; }
+			List<string> TempList = new List<string>();
+			string TempTracker = "";
+			foreach (TVal AnList in (List<TVal>)_root["announce-list"])
 			{
-				if (!(_root.ContainsKey("announce-list"))) { return new string[] { }; }
-				List<string> TempList = new List<string>();
-				string TempTracker = "";
-				foreach (TVal AnList in (List<TVal>)_root["announce-list"].dObject)
+				foreach (TVal TrackList in (List<TVal>)AnList)
 				{
-					foreach (TVal TrackList in (List<TVal>)AnList.dObject)
-					{
-						TempTracker = (string)TrackList.dObject;
-						if (!(TempList.Contains(TempTracker))) { TempList.Add(TempTracker); }
-					}
+					TempTracker = (string)TrackList;
+					if (!(TempList.Contains(TempTracker))) { TempList.Add(TempTracker); }
 				}
-				return TempList.ToArray();
 			}
+			return TempList.ToArray();
 		}
 
 		public string CreatedBy
@@ -382,9 +411,9 @@ namespace TorrentUtilities
 			get { return KeyFindint(Info, "piece length"); }
 		}
 
-		public byte[] Pieces
+		public byte[] GetPieces()
 		{
-			get { return (byte[])Info["pieces"].dObject; }
+			return (byte[])Info["pieces"];
 		}
 
 		public DateTime CreationDate
@@ -433,7 +462,7 @@ namespace TorrentUtilities
 		{
 			if (DictToSearch.ContainsKey(Key))
 			{
-				return (long)DictToSearch[Key].dObject;
+				return (long)DictToSearch[Key];
 			}
 			else
 			{
@@ -448,7 +477,7 @@ namespace TorrentUtilities
 
 		public Dictionary<string, TVal> Info
 		{
-			get { return (Dictionary<string, TVal>)_root["info"].dObject; }
+			get { return (Dictionary<string, TVal>)_root["info"]; }
 		}
 
 		//Changed 25.4.2007
@@ -478,5 +507,17 @@ namespace TorrentUtilities
 			_rCallback(Division);
 		}
 		#endregion
+
+		protected virtual void Dispose(bool disposing)
+		{
+			if (disposing)
+				_torrent.Close();
+		}
+
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
 	}
 }

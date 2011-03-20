@@ -66,18 +66,20 @@ namespace TorrentPatcher
 			bool result = false;
 			try
 			{
-				Ping ping = new Ping();
-				PingOptions options = new PingOptions();
-				// Use the default Ttl value which is 128,
-				// but change the fragmentation behavior.
-				options.DontFragment = true;
-				// Create a buffer of 32 bytes of data to be transmitted.
-				string s = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-				byte[] bytes = Encoding.ASCII.GetBytes(s);
-				int timeout = 120;
-				if (ping.Send(_server, timeout, bytes, options).Status == IPStatus.Success)
+				using (Ping ping = new Ping())
 				{
-					result = true;
+					PingOptions options = new PingOptions();
+					// Use the default Ttl value which is 128,
+					// but change the fragmentation behavior.
+					options.DontFragment = true;
+					// Create a buffer of 32 bytes of data to be transmitted.
+					string s = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+					byte[] bytes = Encoding.ASCII.GetBytes(s);
+					int timeout = 120;
+					if (ping.Send(_server, timeout, bytes, options).Status == IPStatus.Success)
+					{
+						result = true;
+					}
 				}
 			}
 			catch (NetworkInformationException)
@@ -101,12 +103,14 @@ namespace TorrentPatcher
 				foreach (IPAddress address in hostEntry.AddressList)
 				{
 					IPEndPoint remoteEP = new IPEndPoint(address, _port);
-					Socket socket = new Socket(remoteEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-					socket.Connect(remoteEP);
-					if (socket.Connected)
+					using (Socket socket = new Socket(remoteEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
 					{
-						result = true;
-						socket.Close();
+						socket.Connect(remoteEP);
+						if (socket.Connected)
+						{
+							result = true;
+							socket.Close();
+						}
 					}
 				}
 			}

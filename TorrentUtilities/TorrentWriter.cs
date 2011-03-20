@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -8,28 +9,27 @@ namespace TorrentUtilities
 	/// <summary>
 	/// Writes a Dictionary of type <string, TVal> to a .torrent file
 	/// </summary>
-	public class TorrentWriter
+	public class TorrentWriter : IDisposable
 	{
 		#region Inner Vars
 		StreamWriter _torrent;
 		string _path;
 		Dictionary<string, TVal> _root;
-		Encoding _enc;
 		#endregion
 
 		#region Constructors
-		public TorrentWriter(string TPath, Dictionary<string, TVal> Root, Encoding enc)
+		public TorrentWriter(TVal val)
 		{
-			_path = TPath;
+			Debug.Assert(val.Type == DataType.Dictionary);
+			Dictionary<string, TVal> Root = (Dictionary<string, TVal>)val;
 			_root = Root;
-			_enc = enc;
-			Write();
 		}
 		#endregion
 
 		#region Writing
-		private void Write()
+		public void Write(string TPath)
 		{
+			_path = TPath;
 			try
 			{
 				//_torrent = new BinaryWriter(new FileStream(_path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite),Encoding.UTF8);
@@ -70,7 +70,6 @@ namespace TorrentUtilities
 			using(FileStream test = new FileStream(_path, FileMode.Append, FileAccess.Write))
 			{
 				test.Write(Data,0,Data.Length);
-				test.Close();
 			}
 			_torrent = new StreamWriter(_path, true);
 		}
@@ -80,11 +79,11 @@ namespace TorrentUtilities
 			_torrent.Write("i" + Data.ToString() + "e");
 		}
 
-		private void WriteData(string Data)
+		private void WriteData(string Data, Encoding Enc = null)
 		{
-			//Data=Encoding.
-			//_torrent.Write(Data.Length.ToString() + ":");
-			WriteData(System.Text.Encoding.Default.GetBytes(Data));
+			if (Enc == null)
+				Enc = System.Text.Encoding.UTF8;
+			WriteData(Enc.GetBytes(Data));
 		}
 
 		private void WriteData(TVal Data)
@@ -92,22 +91,34 @@ namespace TorrentUtilities
 			switch (Data.Type)
 			{
 				case DataType.Dictionary:
-					WriteData((Dictionary<string, TVal>)Data.dObject);
+					WriteData((Dictionary<string, TVal>)Data);
 					break;
 				case DataType.List:
-					WriteData((List<TVal>)Data.dObject);
+					WriteData((List<TVal>)Data);
 					break;
 				case DataType.Byte:
-					WriteData((byte[])Data.dObject);
+					WriteData((byte[])Data);
 					break;
 				case DataType.Int:
-					WriteData((long)Data.dObject);
+					WriteData((long)Data);
 					break;
 				default:
-					WriteData((string)Data.dObject);
+					WriteData((string)Data, Data.dEncoding);
 					break;
 			}
 		}
 		#endregion
+
+		protected virtual void Dispose(bool disposing)
+		{
+			if (disposing)
+				_torrent.Close();
+		}
+
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
 	}
 }

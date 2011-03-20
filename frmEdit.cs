@@ -9,7 +9,7 @@ using TorrentUtilities;
 
 namespace TorrentPatcher
 {
-	public delegate void dSructureUpdate(string Path, string Name, TVal Value);
+	public delegate void dSructureUpdate(string path, string name, TVal value);
 
 	public partial class frmEdit : Form
 	{
@@ -19,23 +19,23 @@ namespace TorrentPatcher
 		private DataType _Type;
 		private Dictionary<DataType, string> dTable;
 
-		public frmEdit(bool Edit, string Path, DataType Type, string Value, bool ParentList, dSructureUpdate Callback)
+		public frmEdit(bool edit, string path, DataType type, string value, bool parentList, dSructureUpdate callback)
 		{
 			InitializeComponent();
 			LoadWordDict();
-			_StructUpdateCallback = Callback;
-			_path = Path;
-			grbEdit.Text = Edit ? "Edit" : "Add";
-			btnOK.Text = Edit ? "Edit" : "Add";
-			txtKeyName.Text = Path.Substring(Path.LastIndexOf('/') + 1);
-			_ParentList = ParentList;
+			_StructUpdateCallback = callback;
+			_path = path;
+			grbEdit.Text = edit ? "Edit" : "Add";
+			btnOK.Text = edit ? "Edit" : "Add";
+			txtKeyName.Text = path.Substring(path.LastIndexOf('/') + 1);
+			_ParentList = parentList;
 			txtKeyName.ReadOnly = _ParentList;
-			_Type = Type;
+			_Type = type;
 			CheckForBlank(this, new EventArgs());
-			cboKeyType.SelectedIndex = TypeToIndex(Type);
-			txtKeyValue.Text = Value;
-			lblPlace.Text = Path.Substring(0, Path.LastIndexOf('/'));
-			Text = Edit ? ("Editing " + Path) : ("Adding To " + lblPlace.Text);
+			cboKeyType.SelectedIndex = TypeToIndex(type);
+			txtKeyValue.Text = value;
+			lblPlace.Text = path.Substring(0, path.LastIndexOf('/'));
+			Text = edit ? ("Editing " + path) : ("Adding To " + lblPlace.Text);
 			base.ShowDialog();
 		}
 
