@@ -1,23 +1,30 @@
+using System;
 using System.IO;
 using System.Windows.Forms;
 using TorrentUtilities;
 
 namespace TorrentPatcher
 {
-	public class StructureExport
+	public class StructureExport : IDisposable
 	{
 		StreamWriter _file;
 		int _NodeCount;
 		int c;
 
-		public StructureExport(string Name,TreeNode Node,string Path,int NodeCount)
+		public StructureExport()
 		{
-			_NodeCount=NodeCount;
-			c=0;
-			_file=new StreamWriter(File.Create(Path));
-			WriteHeading(Name);
-			WriteData(Node);
-			_file.Close();
+		}
+
+		public void WriteToFile(string Name, TreeNode Node, string Path, int NodeCount)
+		{
+			_NodeCount = NodeCount;
+			c = 0;
+			using (_file = new StreamWriter(File.Create(Path)))
+			{
+				WriteHeading(Name);
+				WriteData(Node);
+				_file.Close();
+			}
 		}
 
 		private void WriteData(TreeNode Node)
@@ -54,13 +61,27 @@ namespace TorrentPatcher
 
 		private string NodeName(TreeNode Node)
 		{
-			if (Node.Name == "") { return Node.Index.ToString(); }
-			else { return Node.Name; }
+			if (Node.Name == "") 
+				return Node.Index.ToString();
+			else
+				return Node.Name;
 		}
 
 		private void WriteTabs(int n)
 		{
 			_file.Write("".PadRight(n).Replace(" ",".\t"));
+		}
+
+		protected virtual void Dispose(bool disposing)
+		{
+			if (disposing)
+				_file.Close();
+		}
+
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
 		}
 	}
 }

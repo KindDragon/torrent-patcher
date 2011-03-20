@@ -4,7 +4,7 @@ using TorrentUtilities;
 
 namespace TorrentPatcher
 {
-	public static class dNode
+	static class dNode
 	{
 		public static string NodePath(TreeNode Node)
 		{

@@ -39,7 +39,7 @@ namespace TorrentUtilities
             _path="";
             foreach (TVal tPath in FullPath)
             {
-                _path += @"\" + (string)tPath.dObject;
+                _path += @"\" + (string)tPath;
             }
             _path = _path.Remove(0, 1);
             int FileNamePos = _path.LastIndexOf(@"\");

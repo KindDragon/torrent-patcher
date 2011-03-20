@@ -39,59 +39,61 @@ namespace TorrentPatcher
 	//the function that will extract the icons from a file
 	public static class IconHandler
 	{
-
-		[StructLayout(LayoutKind.Sequential)]
-		struct SHFILEINFO
+		static class NativeMethods
 		{
-			public IntPtr hIcon;
-			public IntPtr iIcon;
-			public uint dwAttributes;
-			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-			public string szDisplayName;
-			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
-			public string szTypeName;
-		};
+			[StructLayout(LayoutKind.Sequential)]
+			public struct SHFILEINFO
+			{
+				public IntPtr hIcon;
+				public IntPtr iIcon;
+				public uint dwAttributes;
+				[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+				public string szDisplayName;
+				[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
+				public string szTypeName;
+			};
 
-		const uint SHGFI_ICON = 0x100;
-		const uint SHGFI_USEFILEATTRIBUTES = 0x10;
+			public const uint SHGFI_ICON = 0x100;
+			public const uint SHGFI_USEFILEATTRIBUTES = 0x10;
 
-		[DllImport("shell32.dll", CharSet = CharSet.Auto)]
-		internal extern static int ExtractIconEx(
-			[MarshalAs(UnmanagedType.LPTStr)] 
+			[DllImport("shell32.dll", CharSet = CharSet.Auto)]
+			public extern static int ExtractIconEx(
+				[MarshalAs(UnmanagedType.LPTStr)] 
 			string lpszFile,                //size of the icon
-			int nIconIndex,                 //index of the icon (in case we have more then 1 icon in the file
-			IntPtr[] phIconLarge,           //32x32 icon
-			IntPtr[] phIconSmall,           //16x16 icon
-			int nIcons);                    //how many to get
+				int nIconIndex,                 //index of the icon (in case we have more then 1 icon in the file
+				IntPtr[] phIconLarge,           //32x32 icon
+				IntPtr[] phIconSmall,           //16x16 icon
+				int nIcons);                    //how many to get
 
-		[DllImport("shell32.dll")]
-		static extern IntPtr SHGetFileInfo(
-			string pszPath,				//path
-			uint dwFileAttributes,		//attributes
-			ref SHFILEINFO psfi,		//struct pointer
-			uint cbSizeFileInfo,		//size
-			uint uFlags);	//flags
+			[DllImport("shell32.dll")]
+			public extern static IntPtr SHGetFileInfo(
+				string pszPath,				//path
+				uint dwFileAttributes,		//attributes
+				ref SHFILEINFO psfi,		//struct pointer
+				uint cbSizeFileInfo,		//size
+				uint uFlags);	//flags
 
-		//we need this function to release the unmanaged resource,
-		//the unmanaged resource will be copies to a managed one and it will be returned.
-		[DllImport("user32.dll", CharSet = CharSet.Auto)]
-		extern static bool DestroyIcon(IntPtr handle);
+			//we need this function to release the unmanaged resource,
+			//the unmanaged resource will be copies to a managed one and it will be returned.
+			[DllImport("user32.dll", CharSet = CharSet.Auto)]
+			public extern static bool DestroyIcon(IntPtr handle);
+		}
 
 		//will return an array of icons 
 		public static Icon[] IconsFromFile(string Filename, IconSize Size)
 		{
-			int IconCount = ExtractIconEx(Filename, -1, null, null, 0); //checks how many icons.
+			int IconCount = NativeMethods.ExtractIconEx(Filename, -1, null, null, 0); //checks how many icons.
 			IntPtr[] IconPtr = new IntPtr[IconCount];
 			Icon TempIcon;
 
 			//extracts the icons by the size that was selected.
 			if (Size == IconSize.Small)
 			{
-				ExtractIconEx(Filename, 0, null, IconPtr, IconCount);
+				NativeMethods.ExtractIconEx(Filename, 0, null, IconPtr, IconCount);
 			}
 			else
 			{
-				ExtractIconEx(Filename, 0, IconPtr, null, IconCount);
+				NativeMethods.ExtractIconEx(Filename, 0, IconPtr, null, IconCount);
 			}
 
 			Icon[] IconList = new Icon[IconCount];
@@ -109,7 +111,7 @@ namespace TorrentPatcher
 		//extract one selected by index icon from a file.
 		public static Icon IconFromFile(string Filename, IconSize Size, int Index)
 		{
-			int IconCount = ExtractIconEx(Filename, -1, null, null, 0); //checks how many icons.
+			int IconCount = NativeMethods.ExtractIconEx(Filename, -1, null, null, 0); //checks how many icons.
 			if (IconCount <= 0 || Index >= IconCount) { return null; } // no icons were found.
 
 			Icon TempIcon;
@@ -118,11 +120,11 @@ namespace TorrentPatcher
 			//extracts the icon that we want in the selected size.
 			if (Size == IconSize.Small)
 			{
-				ExtractIconEx(Filename, Index, null, IconPtr, 1);
+				NativeMethods.ExtractIconEx(Filename, Index, null, IconPtr, 1);
 			}
 			else
 			{
-				ExtractIconEx(Filename, Index, IconPtr, null, 1);
+				NativeMethods.ExtractIconEx(Filename, Index, IconPtr, null, 1);
 			}
 
 			TempIcon = Icon.FromHandle(IconPtr[0]);
@@ -140,14 +142,14 @@ namespace TorrentPatcher
 				if (Extension[0] != '.') { Extension = '.' + Extension; }
 
 				//temp struct for getting file shell info
-				SHFILEINFO TempFileInfo = new SHFILEINFO();
+				NativeMethods.SHFILEINFO TempFileInfo = new NativeMethods.SHFILEINFO();
 
-				SHGetFileInfo(
+				NativeMethods.SHGetFileInfo(
 					Extension,
 					0,
 					ref TempFileInfo,
 					(uint)Marshal.SizeOf(TempFileInfo),
-					SHGFI_ICON | SHGFI_USEFILEATTRIBUTES | (uint)Size);
+					NativeMethods.SHGFI_ICON | NativeMethods.SHGFI_USEFILEATTRIBUTES | (uint)Size);
 
 				TempIcon = (Icon)Icon.FromHandle(TempFileInfo.hIcon);
 				return GetManagedIcon(ref TempIcon);
@@ -169,26 +171,29 @@ namespace TorrentPatcher
 		{
 			Size NewIconSize = DestenationIconSize == IconSize.Large ? new Size(32, 32) : new Size(16, 16);
 
-			Bitmap RawImage = new Bitmap(SourceImage, NewIconSize);
-			Icon TempIcon = Icon.FromHandle(RawImage.GetHicon());
-			FileStream NewIconStream = new FileStream(IconFilename, FileMode.Create);
-
-			TempIcon.Save(NewIconStream);
-
-			NewIconStream.Close();
+			using (Bitmap RawImage = new Bitmap(SourceImage, NewIconSize))
+			{
+				Icon TempIcon = Icon.FromHandle(RawImage.GetHicon());
+				using (FileStream NewIconStream = new FileStream(IconFilename, FileMode.Create))
+				{
+					TempIcon.Save(NewIconStream);
+					NewIconStream.Close();
+				}
+			}
 		}
 
 		public static void SaveIcon(Icon SourceIcon, string IconFilename)
 		{
-			FileStream NewIconStream = new FileStream(IconFilename, FileMode.Create);
-			SourceIcon.Save(NewIconStream);
-			NewIconStream.Close();
+			using (FileStream NewIconStream = new FileStream(IconFilename, FileMode.Create))
+			{
+				SourceIcon.Save(NewIconStream);
+			}
 		}
 
 		public static Icon GetManagedIcon(ref Icon UnmanagedIcon)
 		{
 			Icon ManagedIcon = (Icon)UnmanagedIcon.Clone();
-			DestroyIcon(UnmanagedIcon.Handle);
+			NativeMethods.DestroyIcon(UnmanagedIcon.Handle);
 			return ManagedIcon;
 		}
 	}
