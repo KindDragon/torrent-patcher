@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -27,6 +28,7 @@ namespace TorrentPatcher
 			InitializeComponent();
 			ThreadStart start = new ThreadStart(CheckUpdatesNow);
 			Thread thread = new Thread(start);
+			
 			if (!System.IO.File.Exists(GetSettingPath() + @"Settings.ini"))
 			{
 				System.IO.File.WriteAllText(GetSettingPath() + @"Settings.ini", "[Settings]" + Environment.NewLine + 
@@ -381,37 +383,11 @@ namespace TorrentPatcher
 				if (dialog.ShowDialog() != DialogResult.OK)
 					return;
 
-				try
-				{
-					IniFile initrackers = new IniFile(dialog.FileName);
-					ini.IniWriteValue("Settings", "TrackersFile", dialog.FileName);
-					int Mi = 0;
-					cmbCity.Items.Clear();
-					for (int i = 1; i <= initrackers.IniReadIntValue("Город", "Количество"); i++)
-					{
-						cmbCity.Items.Add(initrackers.IniReadValue("Город", i));
-						Mi = i - 1;
-					}
-					int trackerIniIndex = Convert.ToInt32(ini.IniReadArray("Settings", "TrackerIniIndex")[0]);
-					if (Mi >= trackerIniIndex)
-					{
-						cmbCity.SelectedIndex = trackerIniIndex;
-					}
-					else
-					{
-						cmbCity.SelectedIndex = 0;
-					}
-					cmbCity.Refresh();
+				ini.IniWriteValue("Settings", "TrackersFile", dialog.FileName);
+				LoadRetrackersFile();
 
-					if (!chkTrackersCheck.Checked)
-					{
-						btnCheckTrackers_Click(null, null);
-					}
-				}
-				catch (System.Exception /*ex*/)
-				{
-
-				}
+				if (!chkTrackersCheck.Checked)
+					btnCheckTrackers_Click(null, null);
 			}
 		}
 
@@ -698,136 +674,178 @@ namespace TorrentPatcher
 			return numArray;
 		}
 
+		public IPAddress GetExternalIP(string ipAddressOrHostName)
+		{
+			IPAddress ipAddress = Dns.GetHostEntry(ipAddressOrHostName).AddressList[0];
+			StringBuilder traceResults = new StringBuilder();
+			using (Ping pingSender = new Ping())
+			{
+				PingOptions pingOptions = new PingOptions();
+				byte[] bytes = new byte[32];
+				pingOptions.DontFragment = true;
+				pingOptions.Ttl = 1;
+				PingReply pingReply = pingSender.Send(
+					ipAddress,
+					5000,
+					new byte[32], pingOptions);
+				return pingReply.Address;
+			}
+		}
+
+		private string GetCity()
+		{
+			IPAddress externalIP = GetExternalIP("www.google.com");
+			if (externalIP == null)
+				return "";
+
+			try
+			{
+				GEOIP.IPInfo? s = GEOIP.getSingleIPInfo(externalIP.ToString());
+				if (!s.HasValue)
+					return "";
+				return s.Value.city;
+			}
+			catch (System.Exception /*ex*/)
+			{
+				return "";
+			}
+		}
+
 		private void CheckUpdatesNow()
 		{
 			tslStatus.Text = "Проверка обновлений...";
-			string str = null;
-			HttpWebRequest request = null;
+			Application.DoEvents();
 			if (chkUpdatePatcher.Checked)
+				CheckPatcherUpdates();
+			if (chkUpdateTrackers.Checked)
+				CheckTrackersListUpdates();
+			tslStatus.Text = "";
+		}
+
+		private void CheckPatcherUpdates()
+		{
+			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(ini.IniReadValue("Settings", "VersionCheck"));
+			request.UserAgent = "TorrentPatcher/" + Application.ProductVersion;
+			request.Credentials = CredentialCache.DefaultCredentials;
+			try
 			{
-				request = (HttpWebRequest) WebRequest.Create(ini.IniReadValue("Settings", "VersionCheck"));
-				request.UserAgent = "TorrentPatcher/" + Application.ProductVersion;
-				request.Credentials = CredentialCache.DefaultCredentials;
-				try
+				string str2 = new StreamReader(request.GetResponse().GetResponseStream()).ReadToEnd();
+				if (String.CompareOrdinal(Application.ProductVersion, str2) >= 0)
 				{
-					string str2 = new StreamReader(request.GetResponse().GetResponseStream()).ReadToEnd();
-					if (String.CompareOrdinal(Application.ProductVersion, str2) >= 0)
-					{
-						tslStatus.Text = "У вас последняя версия патчера.";
-					}
-					else
-					{
-						tslStatus.Text = "Новая версия (" + str2 + ")";
-						if (MessageBox.Show("Версия " + str2 + " доступна. Хотите загрузить новую версию?", 
-							Application.ProductName + Application.ProductVersion, MessageBoxButtons.YesNo, 
-							MessageBoxIcon.Asterisk, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
-						{
-							Process.Start(txtUpdatePatcher.Text);
-						}
-					}
+					tslStatus.Text = "У вас последняя версия патчера.";
 				}
-				catch (Exception exception)
+				else
 				{
-					str = str + exception.Message;
-					tslStatus.Text = "ОШИБКА:" + str;
+					tslStatus.Text = "Новая версия (" + str2 + ")";
+					if (MessageBox.Show("Версия " + str2 + " доступна. Хотите загрузить новую версию?",
+						Application.ProductName + Application.ProductVersion, MessageBoxButtons.YesNo,
+						MessageBoxIcon.Asterisk, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
+					{
+						Process.Start(txtUpdatePatcher.Text);
+					}
 				}
 			}
-			if (chkUpdateTrackers.Checked)
+			catch (Exception exception)
 			{
-				request = (HttpWebRequest) WebRequest.Create(txtUpdateTrackers.Text);
-				request.UserAgent = "TorrentPatcher/" + Application.ProductVersion;
-				string contents = null;
-				request.Credentials = CredentialCache.DefaultCredentials;
-				WebResponse response = null;
-				str = null;
-				try
+				tslStatus.Text = "ОШИБКА:" + exception.Message;
+			}
+		}
+
+		private void CheckTrackersListUpdates()
+		{
+			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(txtUpdateTrackers.Text);
+			request.UserAgent = "TorrentPatcher/" + Application.ProductVersion;
+			string contents = null;
+			request.Credentials = CredentialCache.DefaultCredentials;
+			WebResponse response = null;
+			string errorMsg = "";
+			try
+			{
+				response = request.GetResponse();
+				if (response.ContentLength > -1L)
 				{
-					response = request.GetResponse();
-					if (response.ContentLength > -1L)
+					long length;
+					if (System.IO.File.Exists(ini.IniReadValue("Settings", "TrackersFile")))
 					{
-						long length;
-						if (System.IO.File.Exists(ini.IniReadValue("Settings", "TrackersFile")))
-						{
-							FileInfo info = new FileInfo(ini.IniReadValue("Settings", "TrackersFile"));
-							length = info.Length;
-						}
-						else
-						{
-							length = -1L;
-						}
-						if (response.ContentLength != length)
-						{
-							contents = new StreamReader(response.GetResponseStream()).ReadToEnd();
-							if (contents == null)
-							{
-								return;
-							}
-							System.IO.File.WriteAllText(ini.IniReadValue("Settings", "TrackersFile"), contents, Encoding.Unicode);
-							IniFile file = new IniFile(ini.IniReadValue("Settings", "TrackersFile"));
-							int num2 = 0;
-							cmbCity.Items.Clear();
-							for (int i = 1; i <= file.IniReadIntValue("Город", "Количество"); i++)
-							{
-								cmbCity.Items.Add(file.IniReadValue("Город", i.ToString()));
-								num2 = i - 1;
-							}
-							if (num2 >= Convert.ToInt32(ini.IniReadArray("Settings", "TrackerIniIndex")[0]))
-							{
-								cmbCity.SelectedIndex = Convert.ToInt32(ini.IniReadArray("Settings", "TrackerIniIndex")[0]);
-							}
-							else
-							{
-								cmbCity.SelectedIndex = 0;
-							}
-							cmbCity.Refresh();
-							tslStatus.Text = "Трекер-лист обновлен успешно.";
-						}
-						else
-						{
-							tslStatus.Text = "У вас последняя версия трекер-листа.";
-						}
+						FileInfo info = new FileInfo(ini.IniReadValue("Settings", "TrackersFile"));
+						length = info.Length;
 					}
 					else
 					{
-						str = "Нет связи с " + txtUpdateTrackers.Text;
+						length = -1;
 					}
-					if ((!chkTrackersCheck.Checked & !ini.IniReadBoolValue("Settings", "FirstRun")) & 
-						(ini.IniReadDateValue("Settings", "LastLaunch").AddDays(7.0) < DateTime.Now.Date))
+					if (response.ContentLength != length)
 					{
-						btnCheckTrackers_Click(null, null);
+						contents = new StreamReader(response.GetResponseStream()).ReadToEnd();
+						if (contents == null)
+							return;
+						string trackersFile = ini.IniReadValue("Settings", "TrackersFile");
+						System.IO.File.WriteAllText(trackersFile, contents, Encoding.Unicode);
+						LoadRetrackersFile();
+						tslStatus.Text = "Трекер-лист обновлен успешно.";
+					}
+					else
+					{
+						tslStatus.Text = "У вас последняя версия трекер-листа.";
 					}
 				}
-				catch (Exception exception2)
+				else
 				{
-					str = str + exception2.Message;
-					tslStatus.Text = "ОШИБКА:" + str;
+					errorMsg = "Нет связи с " + txtUpdateTrackers.Text;
 				}
+				if (ini.IniReadBoolValue("Settings", "FirstRun")) // autodetect current city
+				{
+					string city = GetCity();
+					if (city != "")
+					{
+						for (int i = 0; i < cmbCity.Items.Count; i++)
+						{
+							string currentCity = cmbCity.Items[i].ToString();
+							if (String.Compare(currentCity, city, true) == 0)
+							{
+								cmbCity.SelectedIndex = i;
+								cmbCity.Refresh();
+								break;
+							}
+						}
+					}
+				}
+				else if (!chkTrackersCheck.Checked &&
+					(ini.IniReadDateValue("Settings", "LastLaunch").AddDays(7.0) < DateTime.Now.Date))
+				{
+					btnCheckTrackers_Click(null, null);
+				}
+			}
+			catch (Exception exception2)
+			{
+				errorMsg = errorMsg + exception2.Message;
+				tslStatus.Text = "ОШИБКА:" + errorMsg;
 			}
 		}
 
 		private void chkSecureEditing_CheckedChanged(object sender, EventArgs e)
 		{
-			if (!_InnerCheck)
+			if (_InnerCheck)
+				return;
+
+			_InnerCheck = true;
+			if (chkSecureEditing.Checked)
 			{
-				_InnerCheck = true;
-				if (chkSecureEditing.Checked)
-				{
-					UneditableList.Add("^root/info");
-					txtTorrentName.ReadOnly = true;
-				}
-				else if (MessageBox.Show("Be Careful!\r\nSome unsecure changes can corrupt your torrent file or change it's hash\r\n" +
-					"Are you sure you know what you're doing?", Application.ProductName + Application.ProductVersion, 
-					MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.Yes)
-				{
-					UneditableList.Remove("^root/info");
-					txtTorrentName.ReadOnly = false;
-				}
-				else
-				{
-					chkSecureEditing.CheckState = CheckState.Checked;
-				}
-				_InnerCheck = false;
+				UneditableList.Add("^root/info");
+				txtTorrentName.ReadOnly = true;
 			}
+			else if (MessageBox.Show("Be Careful!\r\nSome unsecure changes can corrupt your torrent file or change it's hash\r\n" +
+				"Are you sure you know what you're doing?", Application.ProductName + Application.ProductVersion,
+				MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.Yes)
+			{
+				UneditableList.Remove("^root/info");
+				txtTorrentName.ReadOnly = false;
+			}
+			else
+			{
+				chkSecureEditing.CheckState = CheckState.Checked;
+			}
+			_InnerCheck = false;
 		}
 
 		private void cmsStructure_Opened(object sender, EventArgs e)
@@ -852,25 +870,17 @@ namespace TorrentPatcher
 		private void comboBoxCity_SelectedIndexChanged(object sender, EventArgs e)
 		{
 			IniFile initrackers = new IniFile(ini.IniReadValue("Settings", "TrackersFile").Replace("txt", "ini"));
-			int Mi = 0;
 			cmbISP.Items.Clear();
-			for (int i = 1;
-				i <= Convert.ToInt32(initrackers.IniReadValue("Провайдеры "
-					+ initrackers.IniReadValue("Город", (cmbCity.SelectedIndex + 1).ToString()),
-					"Количество"));
-				i++)
-			{
-				cmbISP.Items.Add(initrackers.IniReadValue("Провайдеры "
-					+ initrackers.IniReadValue("Город", (cmbCity.SelectedIndex + 1).ToString()),
-					i.ToString()));
-				Mi = i - 1;
-			}
-			int index = 0;
-			int trackerIniIndex = Convert.ToInt32(ini.IniReadArray("Settings", "TrackerIniIndex")[1]);
-			if (Mi >= trackerIniIndex)
-				index = trackerIniIndex;
+			string ISPCity = "Провайдеры " + initrackers.IniReadValue("Город", (cmbCity.SelectedIndex + 1).ToString());
+			int ISPCount = Convert.ToInt32(initrackers.IniReadValue(ISPCity, "Количество"));
+			for (int i = 1; i <= ISPCount; i++)
+				cmbISP.Items.Add(initrackers.IniReadValue(ISPCity, i.ToString()));
+			var indexes = ini.IniReadArray("Settings", "TrackerIniIndex");
+			int ISPIndex = indexes.Length >= 2 ? Convert.ToInt32(indexes[1]) : 0;
+			if (ISPIndex < 0 || ISPIndex >= cmbISP.Items.Count)
+				ISPIndex = 0;
 			if (cmbISP.Items.Count > 0)
-				cmbISP.SelectedIndex = index < 0 ? 0 : index;
+				cmbISP.SelectedIndex = ISPIndex;
 			else
 				cmbISP.Text = "";
 			cmbISP.Refresh();
@@ -1200,10 +1210,13 @@ namespace TorrentPatcher
 				chkTrackersCheck.Checked = ini.IniReadBoolValue("Settings", "CheckHosts");
 				chkPingCheck.Checked = ini.IniReadBoolValue("Settings", "CheckPing");
 				chkStat.Checked = ini.IniReadBoolValue("Settings", "AddStat");
-				if (!System.IO.File.Exists(ini.IniReadValue("Settings", "TrackersFile")))
+				string trackersFile = ini.IniReadValue("Settings", "TrackersFile");
+				if (!System.IO.File.Exists(trackersFile))
 				{
-					System.IO.File.WriteAllText(GetSettingPath() + @"trackerssimple.ini", 
-						"[Город]" + Environment.NewLine + "Количество=1" + Environment.NewLine + 
+					trackersFile = GetSettingPath() + @"trackerssimple.ini";
+					System.IO.File.WriteAllText(trackersFile, 
+						"[Город]" + Environment.NewLine + 
+						"Количество=1" + Environment.NewLine + 
 						"1=Санкт-Петербург" + Environment.NewLine + 
 						"[Провайдеры Санкт-Петербург]" + Environment.NewLine + 
 						"Количество=1" + Environment.NewLine + 
@@ -1217,22 +1230,9 @@ namespace TorrentPatcher
 						"5=http://corbinaretracker.dyndns.org:80/announce.php" + Environment.NewLine + 
 						"6=http://netmaster4.dyndns.ws:2710/announce" + Environment.NewLine + 
 						"7=http://local-torrent-stats.no-ip.org:2710/announce", Encoding.Default);
-					ini.IniWriteValue("Settings", "TrackersFile", GetSettingPath() + @"trackerssimple.ini");
+					ini.IniWriteValue("Settings", "TrackersFile", trackersFile);
 				}
-				IniFile file = new IniFile(ini.IniReadValue("Settings", "TrackersFile"));
-				int num = 0;
-				cmbCity.Items.Clear();
-				for (int i = 1; i <= Convert.ToInt32(file.IniReadValue("Город", "Количество")); i++)
-				{
-					cmbCity.Items.Add(file.IniReadValue("Город", i.ToString()));
-					num = i - 1;
-				}
-				int trackerIniIndex = Convert.ToInt32(ini.IniReadArray("Settings", "TrackerIniIndex")[0]);
-				if (num >= trackerIniIndex)
-					cmbCity.SelectedIndex = trackerIniIndex;
-				else
-					cmbCity.SelectedIndex = 0;
-				cmbCity.Refresh();
+				LoadRetrackersFile();
 			}
 			catch (System.Exception /*ex*/)
 			{
@@ -1246,6 +1246,32 @@ namespace TorrentPatcher
 			{
 				CheckUpdatesNow();
 				ini.IniWriteValue("Settings", "LastLaunch", DateTime.Now.Date.ToString());
+			}
+		}
+
+		private void LoadRetrackersFile()
+		{
+			try
+			{
+				string trackersFile = ini.IniReadValue("Settings", "TrackersFile");
+				IniFile file = new IniFile(trackersFile);
+				int cityCount = file.IniReadIntValue("Город", "Количество");
+				cmbCity.Items.Clear();
+				for (int i = 1; i <= cityCount; i++)
+					cmbCity.Items.Add(file.IniReadValue("Город", i.ToString()));
+				var array = ini.IniReadArray("Settings", "TrackerIniIndex");
+				int cityIndex = array.Length >= 1 ? Convert.ToInt32(array[0]) : 0;
+				if (cityIndex < 0 || cityIndex >= cmbCity.Items.Count)
+					cityIndex = 0;
+				if (cmbCity.Items.Count > 0)
+					cmbCity.SelectedIndex = cityIndex;
+				else
+					cmbCity.Text = "";
+				cmbCity.Refresh();
+			}
+			catch (System.Exception /*ex*/)
+			{
+
 			}
 		}
 

@@ -2,8 +2,8 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Torrent Patcher"
-#define MyAppVersion "1.9.3.0"
-#define MyAppPublisher "Re-tracker"
+#define MyAppVersion "1.9.6.0"
+#define MyAppPublisher "Re-tracker.ru"
 #define MyAppURL "http://re-tracker.ru/index.php?showforum=9"
 #define MyAppExeName "TorrentPatcher.exe"
 
@@ -24,7 +24,6 @@ DefaultGroupName={#MyAppName}
 OutputBaseFilename=TorrentPatcher
 Compression=lzma/Max
 SolidCompression=false
-AppVerName=1.9.3.0
 MinVersion=,5.0.2195
 
 [Languages]
@@ -33,11 +32,13 @@ Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 [Files]
 Source: bin\Release\TorrentPatcher.exe; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
+Source: C:\Users\Dragon\Documents\Visual Studio 2008\Projects\TorrentPatcher\trackerssimple.ini; DestDir: {commonappdata}\TorrentPatcher\; Flags: onlyifdoesntexist; Permissions: users-full; 
+Source: C:\Users\Dragon\Documents\Visual Studio 2008\Projects\TorrentPatcher\Settings.ini; DestDir: {commonappdata}\TorrentPatcher\; Flags: onlyifdoesntexist; Permissions: users-full; 
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{group}\{cm:ProgramOnTheWeb,{#MyAppName}}"; Filename: "{#MyAppURL}"
+Name: {group}\{cm:UninstallProgram, {#MyAppName}}; Filename: {uninstallexe}; 
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, "&", "&&")}}"; Flags: shellexec postinstall skipifsilent
-
+Filename: {app}\{#MyAppExeName}; Description: {cm:LaunchProgram,{#StringChange(MyAppName, "&", "&&")}}; Flags: shellexec postinstall skipifsilent RunAsCurrentUser;
