@@ -111,7 +111,7 @@ namespace TorrentUtilities
 
 		protected virtual void Dispose(bool disposing)
 		{
-			if (disposing)
+			if (disposing && _torrent != null)
 				_torrent.Close();
 		}
 
