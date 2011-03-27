@@ -9,7 +9,7 @@ namespace TorrentPatcher
 	{
 		StreamWriter _file;
 		int _NodeCount;
-		int c;
+		int _NodeIndex;
 
 		public StructureExport()
 		{
@@ -18,7 +18,7 @@ namespace TorrentPatcher
 		public void WriteToFile(string Name, TreeNode Node, string Path, int NodeCount)
 		{
 			_NodeCount = NodeCount;
-			c = 0;
+			_NodeIndex = 0;
 			using (_file = new StreamWriter(File.Create(Path)))
 			{
 				WriteHeading(Name);
@@ -29,7 +29,7 @@ namespace TorrentPatcher
 
 		private void WriteData(TreeNode Node)
 		{
-			c++;
+			_NodeIndex++;
 			TVal val = (TVal)Node.Tag;
 			_file.Write(val.GetTypeStr());
 			switch (val.Type)
@@ -40,12 +40,12 @@ namespace TorrentPatcher
 				{
 					_file.WriteLine();
 					WriteTabs(SubNode.Level);
-					_file.Write(NodeName(SubNode)+"\t");
+					_file.Write(NodeName(SubNode) + "\t");
 					WriteData(SubNode);
 				}
 				break;
 			default:
-				_file.Write("\t"+dNode.NodeVal(Node));
+				_file.Write("\t" + dNode.NodeVal(Node));
 				break;
 			}
 		}
@@ -74,7 +74,7 @@ namespace TorrentPatcher
 
 		protected virtual void Dispose(bool disposing)
 		{
-			if (disposing)
+			if (disposing && _file != null)
 				_file.Close();
 		}
 

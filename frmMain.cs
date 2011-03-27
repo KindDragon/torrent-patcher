@@ -11,6 +11,7 @@ using System.Threading;
 using System.Windows.Forms;
 using Microsoft.Win32;
 using TorrentUtilities;
+using Windows7.DesktopIntegration;
 
 namespace TorrentPatcher
 {
@@ -22,6 +23,19 @@ namespace TorrentPatcher
 		public IniFile ini = new IniFile(GetSettingPath() + @"Settings.ini");
 		private List<Control> RequireLoad = new List<Control>();
 		private List<string> UneditableList = new List<string>();
+		private int timeout = 300;
+
+		bool IsWin7OrAbove()
+		{
+			OperatingSystem os = Environment.OSVersion;
+			Version vs = os.Version;
+			if (os.Platform == PlatformID.Win32NT)
+			{
+				if (vs.Major == 6 && vs.Minor >= 1 || vs.Major > 6)
+					return true;
+			}
+			return false;
+		}
 
 		public frmMain()
 		{
@@ -33,9 +47,10 @@ namespace TorrentPatcher
 			{
 				System.IO.File.WriteAllText(GetSettingPath() + @"Settings.ini", "[Settings]" + Environment.NewLine + 
 					"FirstRun=True" + Environment.NewLine + 
-					"AutoCheckUpdates=True" + Environment.NewLine + 
-					"CheckHosts=False" + Environment.NewLine + 
-					"CheckPing=False" + Environment.NewLine + 
+					"AutoCheckUpdates=True" + Environment.NewLine +
+					"CheckHosts=False" + Environment.NewLine +
+					"CheckPing=False" + Environment.NewLine +
+					"Timeout=300" + Environment.NewLine + 
 					"AddStat=False" + Environment.NewLine + 
 					"UpdatePatcher=True" + Environment.NewLine + 
 					"UpdateTrackers=True" + Environment.NewLine +
@@ -609,69 +624,51 @@ namespace TorrentPatcher
 			}
 		}
 
+		/// <summary>
+		/// checks connection to all addresses
+		/// </summary>
+		/// <returns>list of successful connections</returns>
 		private int[] CheckTrackers()
 		{
-			bool res = false;
-			string[] separator = new string[] { "http://", "/", ":" };
-			int[] numArray = new int[lstTrackersAdd.Items.Count - 1];
-			int num = 0;
-			int result = 0;
-			ManualResetEvent[] waitHandles = new ManualResetEvent[lstTrackersAdd.Items.Count - 1];
-			TaskInfo[] infoArray = new TaskInfo[lstTrackersAdd.Items.Count - 1];
-			for (int i = 0; i < (lstTrackersAdd.Items.Count - 1); i++)
+			bool result = false;
+			string[] splitter = new string[] { "http://", "/", ":" };
+			int[] numbers = new int[lstTrackersAdd.Items.Count - 1];
+			int errors = 0;
+
+			ManualResetEvent[] doneEvents = new ManualResetEvent[lstTrackersAdd.Items.Count - 1];
+			TaskInfo[] CheckArray = new TaskInfo[lstTrackersAdd.Items.Count - 1];
+
+			for (int i = 0; i < lstTrackersAdd.Items.Count - 1; i++)
 			{
-				string[] strArray2 = lstTrackersAdd.Items[i].Text.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-				waitHandles[i] = new ManualResetEvent(false);
-				if (int.TryParse(strArray2[1], out result))
-				{
-					if (chkPingCheck.Checked)
-					{
-						TaskInfo info = new TaskInfo(strArray2[0], res, waitHandles[i]);
-						infoArray[i] = info;
-						ThreadPool.QueueUserWorkItem(new WaitCallback(info.ThreadPoolCallback), i);
-					}
-					else
-					{
-						TaskInfo info2 = new TaskInfo(strArray2[0], result, res, waitHandles[i]);
-						infoArray[i] = info2;
-						ThreadPool.QueueUserWorkItem(new WaitCallback(info2.ThreadPoolCallback), i);
-					}
-				}
-				else if (chkPingCheck.Checked)
-				{
-					TaskInfo info3 = new TaskInfo(strArray2[0], res, waitHandles[i]);
-					infoArray[i] = info3;
-					ThreadPool.QueueUserWorkItem(new WaitCallback(info3.ThreadPoolCallback), i);
-				}
+				string[] split = lstTrackersAdd.Items[i].Text.Split(splitter, StringSplitOptions.RemoveEmptyEntries);
+				doneEvents[i] = new ManualResetEvent(false);
+				int port;
+				if (!Int32.TryParse(split[1], out port))
+					port = 80;
+				TaskInfo ti;
+				if (chkPingCheck.Checked)
+					ti = new TaskInfo(split[0], result, doneEvents[i], timeout);
 				else
-				{
-					TaskInfo info4 = new TaskInfo(strArray2[0], 80, res, waitHandles[i]);
-					infoArray[i] = info4;
-					ThreadPool.QueueUserWorkItem(new WaitCallback(info4.ThreadPoolCallback), i);
-				}
+					ti = new TaskInfo(split[0], port, result, doneEvents[i], timeout);
+				CheckArray[i] = ti;
+				ThreadPool.QueueUserWorkItem(ti.ThreadPoolCallback, i);
 			}
-			WaitAll(waitHandles);
-			result = 0;
-			for (int j = 0; j < (lstTrackersAdd.Items.Count - 1); j++)
+
+			WaitAll(doneEvents);
+			int j = 0;
+			for (int i = 0; i < lstTrackersAdd.Items.Count - 1; i++)
 			{
-				if (infoArray[j].Result)
-				{
-					numArray[result++] = j + 1;
-				}
+				if (CheckArray[i].Result)
+					numbers[j++] = i + 1;
 				else
-				{
-					num++;
-				}
+					errors++;
 			}
-			if (num > 0)
-			{
-				string[] strArray4 = new string[] { "Доступно ", ((lstTrackersAdd.Items.Count - num) - 1).ToString(), 
-					" из ", (lstTrackersAdd.Items.Count - 1).ToString(), " ретрекеров" };
-				tslStatus.Text = string.Concat(strArray4);
-				return numArray;
-			}
-			tslStatus.Text = "Доступны все ретрекеры";
-			return numArray;
+			if (errors > 0)
+				tslStatus.Text = "Доступно " + (lstTrackersAdd.Items.Count - errors - 1).ToString() + " из " + (lstTrackersAdd.Items.Count - 1).ToString() + " ретрекеров";
+			else
+				tslStatus.Text = "Доступны все ретрекеры";
+			return numbers;
+
 		}
 
 		public IPAddress GetExternalIP(string ipAddressOrHostName)
@@ -729,7 +726,8 @@ namespace TorrentPatcher
 			request.Credentials = CredentialCache.DefaultCredentials;
 			try
 			{
-				string str2 = new StreamReader(request.GetResponse().GetResponseStream()).ReadToEnd();
+				Stream webStream = request.GetResponse().GetResponseStream();
+				string str2 = new StreamReader(webStream).ReadToEnd();
 				if (String.CompareOrdinal(Application.ProductVersion, str2) >= 0)
 				{
 					tslStatus.Text = "У вас последняя версия патчера.";
@@ -867,12 +865,37 @@ namespace TorrentPatcher
 			}
 		}
 
+		string GetISPIniSectionName(string sCity)
+		{
+			StringBuilder sb = new StringBuilder("Провайдеры ");
+			sb.Append(sCity);
+			return sb.ToString();
+		}
+
+		string GetISPIniSectionName(IniFile file, int cityIndex)
+		{
+			string sCity = file.IniReadValue("Город", cityIndex);
+			return GetISPIniSectionName(sCity);
+		}
+
+		string GetRetrackerIniSectionName(IniFile file, int cityIndex, int providerIndex)
+		{
+			StringBuilder sb = new StringBuilder("Ретрекеры ");
+			string sCity = file.IniReadValue("Город", cityIndex);
+			sb.Append(sCity);
+			sb.Append(" ");
+			string sProvider = GetISPIniSectionName(sCity);
+			sb.Append(file.IniReadValue(sProvider, providerIndex));
+			return sb.ToString();
+		}
+
 		private void comboBoxCity_SelectedIndexChanged(object sender, EventArgs e)
 		{
-			IniFile initrackers = new IniFile(ini.IniReadValue("Settings", "TrackersFile").Replace("txt", "ini"));
+			string trackersFile = ini.IniReadValue("Settings", "TrackersFile").Replace("txt", "ini");
+			IniFile initrackers = new IniFile(trackersFile);
 			cmbISP.Items.Clear();
-			string ISPCity = "Провайдеры " + initrackers.IniReadValue("Город", (cmbCity.SelectedIndex + 1).ToString());
-			int ISPCount = Convert.ToInt32(initrackers.IniReadValue(ISPCity, "Количество"));
+			string ISPCity = GetISPIniSectionName(initrackers, cmbCity.SelectedIndex + 1);
+			int ISPCount = initrackers.IniReadIntValue(ISPCity, "Количество");
 			for (int i = 1; i <= ISPCount; i++)
 				cmbISP.Items.Add(initrackers.IniReadValue(ISPCity, i.ToString()));
 			var indexes = ini.IniReadArray("Settings", "TrackerIniIndex");
@@ -886,17 +909,6 @@ namespace TorrentPatcher
 			cmbISP.Refresh();
 		}
 
-		string GetRetrackerIniName(IniFile file, int cityIndex, int providerIndex)
-		{
-			StringBuilder sb = new StringBuilder("Ретрекеры ");
-			string sCity = file.IniReadValue("Город", cityIndex);
-			sb.Append(sCity);
-			sb.Append(" ");
-			string sProvider = "Провайдеры " + sCity;
-			sb.Append(file.IniReadValue(sProvider, providerIndex));
-			return sb.ToString();
-		}
-
 		private void comboBoxISP_SelectedIndexChanged(object sender, EventArgs e)
 		{
 			IniFile file = new IniFile(ini.IniReadValue("Settings", "TrackersFile"));
@@ -904,7 +916,7 @@ namespace TorrentPatcher
 			int cityIndex = cmbCity.SelectedIndex + 1;
 			int ISPIndex = cmbISP.SelectedIndex + 1;
 			var trackerCheck = ini.IniReadArray("Settings", "TrackerCheck");
-			string trackerName = GetRetrackerIniName(file, cityIndex, ISPIndex);
+			string trackerName = GetRetrackerIniSectionName(file, cityIndex, ISPIndex);
 			int count = file.IniReadIntValue(trackerName, "Количество");
 			if (trackerCheck.Length == 1 && trackerCheck[0] == "0")
 			{
@@ -1209,6 +1221,7 @@ namespace TorrentPatcher
 				txtUpdatePatcher.Text = ini.IniReadValue("Settings", "UpdateURL");
 				chkTrackersCheck.Checked = ini.IniReadBoolValue("Settings", "CheckHosts");
 				chkPingCheck.Checked = ini.IniReadBoolValue("Settings", "CheckPing");
+				timeout = ini.IniReadIntValue("Settings", "Timeout", 500);
 				chkStat.Checked = ini.IniReadBoolValue("Settings", "AddStat");
 				string trackersFile = ini.IniReadValue("Settings", "TrackersFile");
 				if (!System.IO.File.Exists(trackersFile))
@@ -1450,18 +1463,19 @@ namespace TorrentPatcher
 
 		private void SaveSettings()
 		{
-			ini.IniWriteValue("Settings", "AutoCheckUpdates", chkAutoCheckUpdates.Checked.ToString());
-			ini.IniWriteValue("Settings", "UpdatePatcher", chkUpdatePatcher.Checked.ToString());
-			ini.IniWriteValue("Settings", "UpdateTrackers", chkUpdateTrackers.Checked.ToString());
-			ini.IniWriteValue("Settings", "CheckHosts", chkTrackersCheck.Checked.ToString());
-			ini.IniWriteValue("Settings", "CheckPing", chkPingCheck.Checked.ToString());
-			ini.IniWriteValue("Settings", "AddStat", chkStat.Checked.ToString());
+			ini.IniWriteValue("Settings", "AutoCheckUpdates", chkAutoCheckUpdates.Checked);
+			ini.IniWriteValue("Settings", "UpdatePatcher", chkUpdatePatcher.Checked);
+			ini.IniWriteValue("Settings", "UpdateTrackers", chkUpdateTrackers.Checked);
+			ini.IniWriteValue("Settings", "CheckHosts", chkTrackersCheck.Checked);
+			ini.IniWriteValue("Settings", "CheckPing", chkPingCheck.Checked);
+			ini.IniWriteValue("Settings", "Timeout", timeout);
+			ini.IniWriteValue("Settings", "AddStat", chkStat.Checked);
 			ini.IniWriteValue("Settings", "LaunchPath", txtLaunchPath.Text);
 			ini.IniWriteValue("Settings", "LaunchArguments", txtArguments.Text);
-			ini.IniWriteValue("Settings", "SecureEdit", chkSecureEditing.Checked.ToString());
-			ini.IniWriteValue("Settings", "AutoLaunch", chkAutoLaunchAllow.Checked.ToString());
-			ini.IniWriteValue("Settings", "PatchAnnouncer", chkPatchAnnouncer.Checked.ToString());
-			ini.IniWriteValue("Settings", "MagnetAnnounce", chkMagnet.Checked.ToString());
+			ini.IniWriteValue("Settings", "SecureEdit", chkSecureEditing.Checked);
+			ini.IniWriteValue("Settings", "AutoLaunch", chkAutoLaunchAllow.Checked);
+			ini.IniWriteValue("Settings", "PatchAnnouncer", chkPatchAnnouncer.Checked);
+			ini.IniWriteValue("Settings", "MagnetAnnounce", chkMagnet.Checked);
 			ini.IniWriteValue("Settings", "DownloadURL", txtUpdateTrackers.Text);
 			ini.IniWriteValue("Settings", "UpdateURL", txtUpdatePatcher.Text);
 			ini.IniWriteValue("Settings", "TrackerIniIndex", cmbCity.SelectedIndex.ToString() + " " + 
@@ -1473,20 +1487,20 @@ namespace TorrentPatcher
 				Application.DoEvents();
 				btnCheckTrackers_Click(null, null);
 			}
-			ini.IniWriteValue("Settings", "FirstRun", false.ToString());
+			ini.IniWriteValue("Settings", "FirstRun", false);
 			if (base.WindowState != FormWindowState.Normal)
 			{
-				ini.IniWriteValue("Settings", "FormPosX", base.RestoreBounds.Location.X.ToString());
-				ini.IniWriteValue("Settings", "FormPosY", base.RestoreBounds.Location.Y.ToString());
-				ini.IniWriteValue("Settings", "FormSizeHeight", base.RestoreBounds.Size.Height.ToString());
-				ini.IniWriteValue("Settings", "FormSizeWidth", base.RestoreBounds.Size.Width.ToString());
+				ini.IniWriteValue("Settings", "FormPosX", base.RestoreBounds.Location.X);
+				ini.IniWriteValue("Settings", "FormPosY", base.RestoreBounds.Location.Y);
+				ini.IniWriteValue("Settings", "FormSizeHeight", base.RestoreBounds.Size.Height);
+				ini.IniWriteValue("Settings", "FormSizeWidth", base.RestoreBounds.Size.Width);
 			}
 			else
 			{
-				ini.IniWriteValue("Settings", "FormPosX", base.Location.X.ToString());
-				ini.IniWriteValue("Settings", "FormPosY", base.Location.Y.ToString());
-				ini.IniWriteValue("Settings", "FormSizeHeight", base.Size.Height.ToString());
-				ini.IniWriteValue("Settings", "FormSizeWidth", base.Size.Width.ToString());
+				ini.IniWriteValue("Settings", "FormPosX", base.Location.X);
+				ini.IniWriteValue("Settings", "FormPosY", base.Location.Y);
+				ini.IniWriteValue("Settings", "FormSizeHeight", base.Size.Height);
+				ini.IniWriteValue("Settings", "FormSizeWidth", base.Size.Width);
 			}
 			ini.IniWriteValue("Settings", "FormState", base.WindowState.ToString());
 		}
@@ -1660,8 +1674,12 @@ namespace TorrentPatcher
 			{
 				barCheck.PerformStep();
 				barCheck.Refresh();
+				if (IsWin7OrAbove())
+					Windows7Taskbar.SetProgressValue(Handle, (ulong)barCheck.Value, (ulong)waitHandles.Length);	
 				WaitHandle.WaitAny(new WaitHandle[] { waitHandles[i] });
 			}
+			if (IsWin7OrAbove())
+				Windows7Taskbar.SetProgressState(Handle, Windows7Taskbar.ThumbnailProgressState.NoProgress);
 		}
 	}
 }

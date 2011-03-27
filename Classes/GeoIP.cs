@@ -7,7 +7,6 @@ using System.Xml;
 
 namespace TorrentPatcher
 {
-
 	/// <summary>
 	/// Class for geotargeting using ipgeobase.ru XML-service
 	/// v0.1 by Kiss_Lee_Zin (http://www.last.fm/music/insanity13)
@@ -24,7 +23,7 @@ namespace TorrentPatcher
 		public static bool UseDefaultCity { get; set; }
 
 		/// <summary>
-		/// Use proxy Authentification
+		/// Use proxy Authentication
 		/// </summary>
 		public static bool UseAuthentification { get; set; }
 
@@ -94,9 +93,13 @@ namespace TorrentPatcher
 			}
 			request.Append("</ip-list></ipquery>");
 			return request.ToString();
-
 		}
 
+		private static string GetNodeValue(XmlNode Node, string xpath)
+		{
+			XmlNode n = Node.SelectSingleNode(xpath);
+			return n != null ? n.InnerText : null;
+		}
 
 		public static Nullable<IPInfo> getSingleIPInfo(string ip)
 		{
@@ -110,14 +113,14 @@ namespace TorrentPatcher
 
 			if (Node == null) return null;
 			IPInfo.ip = Node.Attributes["value"].Value;
-			IPInfo.city = Node.SelectSingleNode("city").InnerText;
-			IPInfo.region = Node.SelectSingleNode("region").InnerText;
-			IPInfo.district = Node.SelectSingleNode("district").InnerText;
-			IPInfo.lat = Node.SelectSingleNode("lat").InnerText;
-			IPInfo.lng = Node.SelectSingleNode("lng").InnerText;
-			IPInfo.inetNum = Node.SelectSingleNode("inetnum").InnerText;
-			IPInfo.inetDescr = Node.SelectSingleNode("inet-descr").InnerText;
-			IPInfo.inetStatus = Node.SelectSingleNode("inet-status").InnerText;
+			IPInfo.city = GetNodeValue(Node, "city");
+			IPInfo.region = GetNodeValue(Node, "region");
+			IPInfo.district = GetNodeValue(Node, "district");
+			IPInfo.lat = GetNodeValue(Node, "lat");
+			IPInfo.lng = GetNodeValue(Node, "lng");
+			IPInfo.inetNum = GetNodeValue(Node, "inetnum");
+			IPInfo.inetDescr = GetNodeValue(Node, "inet-descr");
+			IPInfo.inetStatus = GetNodeValue(Node, "inet-status");
 			return IPInfo;
 		}
 
@@ -135,18 +138,17 @@ namespace TorrentPatcher
 			IPInfo IPInfo;
 			Dictionary<string, IPInfo> IPInfoList = new Dictionary<string, IPInfo>();
 
-
 			foreach (XmlNode Node in xDocument.SelectNodes("/ip-answer/ip"))
 			{
 				IPInfo.ip = Node.Attributes["value"].Value;
-				IPInfo.city = Node.SelectSingleNode("city").InnerText;
-				IPInfo.region = Node.SelectSingleNode("region").InnerText;
-				IPInfo.district = Node.SelectSingleNode("district").InnerText;
-				IPInfo.lat = Node.SelectSingleNode("lat").InnerText;
-				IPInfo.lng = Node.SelectSingleNode("lng").InnerText;
-				IPInfo.inetNum = Node.SelectSingleNode("inetnum").InnerText;
-				IPInfo.inetDescr = Node.SelectSingleNode("inet-descr").InnerText;
-				IPInfo.inetStatus = Node.SelectSingleNode("inet-status").InnerText;
+				IPInfo.city = GetNodeValue(Node, "city");
+				IPInfo.region = GetNodeValue(Node, "region");
+				IPInfo.district = GetNodeValue(Node, "district");
+				IPInfo.lat = GetNodeValue(Node, "lat");
+				IPInfo.lng = GetNodeValue(Node, "lng");
+				IPInfo.inetNum = GetNodeValue(Node, "inetnum");
+				IPInfo.inetDescr = GetNodeValue(Node, "inet-descr");
+				IPInfo.inetStatus = GetNodeValue(Node, "inet-status");
 				IPInfoList.Add(IPInfo.ip, IPInfo);
 			}
 
@@ -178,7 +180,6 @@ namespace TorrentPatcher
 				objRequest.Proxy = new WebProxy(ProxyName, ProxyPort);
 				objRequest.Proxy.Credentials = new NetworkCredential(CredentialsName, CredentialsPass);
 			}
-
 
 			//Open stream
 			using (Stream str = objRequest.GetRequestStream())
