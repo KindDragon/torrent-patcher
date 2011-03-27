@@ -41,6 +41,16 @@ namespace TorrentPatcher
 			NativeMethods.WritePrivateProfileString(Section, Key, Value, path);
 		}
 
+		public void IniWriteValue(string Section, string Key, int Value)
+		{
+			IniWriteValue(Section, Key, Value.ToString());
+		}
+
+		public void IniWriteValue(string Section, string Key, bool Value)
+		{
+			IniWriteValue(Section, Key, Value.ToString());
+		}
+
 		private const int maxSize = 0xFFFF;
 		private StringBuilder retVal = new StringBuilder(maxSize);
 
@@ -71,6 +81,14 @@ namespace TorrentPatcher
 			return Convert.ToInt32(IniReadValue(Section, Key));
 		}
 
+		public int IniReadIntValue(string Section, string Key, int defValue)
+		{
+			int value;
+			if (!Int32.TryParse(IniReadValue(Section, Key), out value))
+				value = defValue;
+			return value;
+		}
+
 		public string[] IniReadArray(string Section, string Key)
 		{
 			return IniReadValue(Section, Key).Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -81,9 +99,25 @@ namespace TorrentPatcher
 			return Convert.ToBoolean(IniReadValue(Section, Key));
 		}
 
+		public bool IniReadBoolValue(string Section, string Key, bool defValue)
+		{
+			bool value;
+			if (!Boolean.TryParse(IniReadValue(Section, Key), out value))
+				value = defValue;
+			return value;
+		}
+
 		public DateTime IniReadDateValue(string Section, string Key)
 		{
 			return Convert.ToDateTime(IniReadValue(Section, Key));
+		}
+
+		public DateTime IniReadDateValue(string Section, string Key, DateTime defValue)
+		{
+			DateTime value;
+			if (!DateTime.TryParse(IniReadValue(Section, Key), out value))
+				value = defValue;
+			return value;
 		}
 	}
 }

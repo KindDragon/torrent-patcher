@@ -17,33 +17,35 @@ namespace TorrentPatcher
 		private bool _result;
 		public bool Result { get { return _result; } }
 		private ManualResetEvent _doneEvent;
+		private int _timeout;
 
 		// Public constructor provides an easy way to supply all
 		// the information needed for the task.
-		public TaskInfo(string Ser, int N, bool Res, ManualResetEvent doneEvent)
+		public TaskInfo(string Ser, int N, bool Res, ManualResetEvent doneEvent, int timeout = 300)
 		{
 			_server = Ser;
 			_port = N;
 			_result = Res;
 			_doneEvent = doneEvent;
+			_timeout = timeout;
 		}
 
 		// Public constructor provides an easy way to supply all
 		// the information needed for the task.
-		public TaskInfo(string Ser, bool Res, ManualResetEvent doneEvent)
+		public TaskInfo(string Ser, bool Res, ManualResetEvent doneEvent, int timeout = 300)
 		{
 			_server = Ser;
 			_result = Res;
 			_ping = true;
 			_doneEvent = doneEvent;
+			_timeout = timeout;
 		}
-
 
 		// Wrapper method for use with thread pool.
 		public void ThreadPoolCallback(object threadContext)
 		{
 			int threadIndex = (int)threadContext;
-			CheckConnection();
+			_result = CheckConnection();
 			_doneEvent.Set();
 		}
 
@@ -53,17 +55,32 @@ namespace TorrentPatcher
 		/// <param name="server">server to connect</param>
 		/// <param name="port">port to connect</param>
 		/// <returns>connection success or not</returns>
-		private void CheckConnection()
-		{
-			if (!_ping)
-				_result = CheckConnectionUsingSocket();
-			else
-				_result = CheckConnectionUsingPing();
-		}
-
-		private bool CheckConnectionUsingPing()
+		private bool CheckConnection()
 		{
 			bool result = false;
+			try
+			{
+				// Get host related information.
+				IPAddress[] addressList = Dns.GetHostAddresses(_server);
+				if (!_ping)
+					result = CheckConnectionUsingSocket(addressList);
+				else
+					result = CheckConnectionUsingPing(addressList);
+			}
+			catch (SocketException)
+			{
+				result = false;
+			}
+			return result;
+		}
+
+		/// <summary>
+		/// Checks connection to current server using ping
+		/// </summary>
+		/// <param name="server">server to connect</param>
+		/// <returns>connection success or not</returns>
+		private bool CheckConnectionUsingPing(IPAddress[] addressList)
+		{
 			try
 			{
 				using (Ping ping = new Ping())
@@ -75,50 +92,73 @@ namespace TorrentPatcher
 					// Create a buffer of 32 bytes of data to be transmitted.
 					string s = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 					byte[] bytes = Encoding.ASCII.GetBytes(s);
-					int timeout = 120;
-					if (ping.Send(_server, timeout, bytes, options).Status == IPStatus.Success)
-					{
-						result = true;
-					}
-				}
-			}
-			catch (NetworkInformationException)
-			{
-				result = false;
-			}
-			return result;
-		}
 
-		private bool CheckConnectionUsingSocket()
-		{
-			bool result = false;
-			try
-			{
-				// Get host related information.
-				IPHostEntry hostEntry = Dns.GetHostEntry(_server);
-
-				// Loop through the AddressList to obtain the supported AddressFamily. This is to avoid
-				// an exception that occurs when the host IP Address is not compatible with the address family
-				// (typical in the IPv6 case).
-				foreach (IPAddress address in hostEntry.AddressList)
-				{
-					IPEndPoint remoteEP = new IPEndPoint(address, _port);
-					using (Socket socket = new Socket(remoteEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
+					// Loop through the AddressList to obtain the supported AddressFamily. This is to avoid
+					// an exception that occurs when the host IP Address is not compatible with the address family
+					// (typical in the IPv6 case).
+					foreach (IPAddress address in addressList)
 					{
-						socket.Connect(remoteEP);
-						if (socket.Connected)
+						if (ping.Send(_server, _timeout, bytes, options).Status == IPStatus.Success)
 						{
-							result = true;
-							socket.Close();
+							return true;
 						}
 					}
 				}
 			}
-			catch
+			catch(PingException)
 			{
-				result = false;
 			}
-			return result;
+			return false;
+		}
+
+		/// <summary>
+		/// Checks connection to current server and port using socket
+		/// </summary>
+		/// <param name="server">server to connect</param>
+		/// <param name="port">port to connect</param>
+		/// <returns>connection success or not</returns>
+		private bool CheckConnectionUsingSocket(IPAddress[] addressList)
+		{
+			try
+			{
+				// Loop through the AddressList to obtain the supported AddressFamily. This is to avoid
+				// an exception that occurs when the host IP Address is not compatible with the address family
+				// (typical in the IPv6 case).
+				foreach (IPAddress address in addressList)
+				{
+					IPEndPoint remoteEP = new IPEndPoint(address, _port);
+					using (Socket socket = new Socket(remoteEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
+					{
+						socket.Blocking = false;
+						try
+						{
+							socket.Connect(remoteEP);
+						}
+						catch (SocketException ex)
+						{
+							if (ex.SocketErrorCode != SocketError.WouldBlock)
+							{
+								// Handle bad exception
+								throw ex;
+							}
+
+							// Wait until connected or timeout.
+							// SelectWrite: returns true, if processing a Connect,
+							// and the connection has succeeded.
+							if (socket.Poll(_timeout * 1000, SelectMode.SelectWrite) == true && 
+								socket.Connected)
+							{
+								socket.Close();
+								return true;
+							}
+						}
+					}
+				}
+			}
+			catch(SocketException)
+			{
+			}
+			return false;
 		}
 	}
 }

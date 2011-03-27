@@ -90,7 +90,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="dNode.cs" />
-    <Compile Include="GeoIP.cs" />
+    <Compile Include="Classes\GeoIP.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
@@ -108,10 +108,10 @@
     <Compile Include="frmEdit.Designer.cs">
       <DependentUpon>frmEdit.cs</DependentUpon>
     </Compile>
-    <Compile Include="IconHandler.cs">
+    <Compile Include="Classes\IconHandler.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="IniFile.cs">
+    <Compile Include="Classes\IniFile.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Program.cs">
@@ -125,6 +125,18 @@
     <Compile Include="TorrentUtilities\TorrentParser.cs" />
     <Compile Include="TorrentUtilities\TorrentWriter.cs" />
     <Compile Include="TorrentUtilities\TVal.cs" />
+    <Compile Include="Windows7Integration\DesktopIntegration\COMTypes.cs" />
+    <Compile Include="Windows7Integration\DesktopIntegration\IIDGuid.cs" />
+    <Compile Include="Windows7Integration\DesktopIntegration\Interop.cs" />
+    <Compile Include="Windows7Integration\DesktopIntegration\Windows7Taskbar.cs" />
+    <Compile Include="Windows7Integration\VistaBridge\comguids.cs" />
+    <Compile Include="Windows7Integration\VistaBridge\definitionoptions.cs" />
+    <Compile Include="Windows7Integration\VistaBridge\errorhelper.cs" />
+    <Compile Include="Windows7Integration\VistaBridge\externdll.cs" />
+    <Compile Include="Windows7Integration\VistaBridge\foldercategory.cs" />
+    <Compile Include="Windows7Integration\VistaBridge\redirectioncapabilities.cs" />
+    <Compile Include="Windows7Integration\VistaBridge\safenativemethods.cs" />
+    <Compile Include="Windows7Integration\VistaBridge\shellcominterfaces.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
