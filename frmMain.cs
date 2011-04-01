@@ -23,7 +23,7 @@ namespace TorrentPatcher
 		public IniFile ini = new IniFile(GetSettingPath() + @"Settings.ini");
 		private List<Control> RequireLoad = new List<Control>();
 		private List<string> UneditableList = new List<string>();
-		private int timeout = 300;
+		private int timeout = 500;
 
 		bool IsWin7OrAbove()
 		{
@@ -50,8 +50,9 @@ namespace TorrentPatcher
 					"AutoCheckUpdates=True" + Environment.NewLine +
 					"CheckHosts=False" + Environment.NewLine +
 					"CheckPing=False" + Environment.NewLine +
-					"Timeout=300" + Environment.NewLine + 
+					"Timeout=500" + Environment.NewLine +
 					"AddStat=False" + Environment.NewLine + 
+					"AddRetrackerLocal=True" + Environment.NewLine + 
 					"UpdatePatcher=True" + Environment.NewLine + 
 					"UpdateTrackers=True" + Environment.NewLine +
 					"LaunchPath=" + Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) + @"\uTorrent\uTorrent.exe" + Environment.NewLine + 
@@ -65,10 +66,10 @@ namespace TorrentPatcher
 					"UpdateURL=http://re-tracker.ru/TorrentPatcher.exe" + Environment.NewLine + 
 					"TrackerIniIndex=0 0" + Environment.NewLine + 
 					"TrackerCheck=1 2 3 4 5 6 7" + Environment.NewLine + 
-					"FormPosX=50" + Environment.NewLine + 
-					"FormPosY=50" + Environment.NewLine + 
-					"FormSizeHeight=300" + Environment.NewLine + 
-					"FormSizeWidth=275" + Environment.NewLine + 
+					"FormPosX=50" + Environment.NewLine +
+					"FormPosY=50" + Environment.NewLine +
+					"FormSizeWidth=" + MinimumSize.Width.ToString() + Environment.NewLine +
+					"FormSizeHeight=" + MinimumSize.Height.ToString() + Environment.NewLine + 
 					"FormState=Normal" + Environment.NewLine +
 					"TrackersFile=" + GetSettingPath() + @"trackerssimple.ini" + Environment.NewLine + 
 					"LastLaunch=" + DateTime.Today.AddDays(-1.0).ToString());
@@ -178,8 +179,9 @@ namespace TorrentPatcher
 			ini.IniWriteValue("Settings", "TrackerCheck", "0");
 			comboBoxISP_SelectedIndexChanged(null, null);
 			base.WindowState = FormWindowState.Normal;
-			string[] result = new string[lstTrackersAdd.Items.Count - 1];
-			int[] numbers = new int[lstTrackersAdd.Items.Count - 1];
+			int retrackersCount = lstTrackersAdd.Items.Count - 1;
+			string[] result = new string[retrackersCount];
+			int[] numbers = new int[retrackersCount];
 			string str = null;
 			Stopwatch stopwatch = new Stopwatch();
 			stopwatch.Start();
@@ -279,9 +281,11 @@ namespace TorrentPatcher
 			}
 			else
 			{
-				using (new frmEdit(false, dNode.NodePath(trvTorrent.SelectedNode), DataType.String, "", parentList,
+				using (frmEdit frm = new frmEdit(false, dNode.NodePath(trvTorrent.SelectedNode), DataType.String, "", parentList,
 					new dSructureUpdate(UpdateStructCallBack)))
-				{ }
+				{
+					frm.ShowDialog();
+				}
 			}
 		}
 
@@ -339,9 +343,11 @@ namespace TorrentPatcher
 				else
 				{
 					bool parentList = dNode.NodeType(trvTorrent.SelectedNode.Parent) == DataType.List;
-					using (new frmEdit(true, dNode.NodePath(trvTorrent.SelectedNode), type,
+					using (frmEdit frm = new frmEdit(true, dNode.NodePath(trvTorrent.SelectedNode), type,
 						dNode.NodeVal(trvTorrent.SelectedNode), parentList, new dSructureUpdate(UpdateStructCallBack)))
-					{ }
+					{ 
+						frm.ShowDialog();
+					}
 				}
 			}
 		}
@@ -458,31 +464,36 @@ namespace TorrentPatcher
 
 		private void PatchTorrentFile(string torrentPath, Stopwatch stopwatch)
 		{
+			bool bAddStatistic = chkStat.Checked;
+			int lastIndex = lstTrackers.Items.Count - 1;
+			if (lstTrackers.Items[lastIndex].SubItems[0].Text == addNewTracker)
+				lstTrackers.Items[lastIndex].Remove();
 			Regex regex = new Regex("(http|https|udp)://(.*)");
 			for (int j = 0; j < lstTrackersAdd.Items.Count; j++)
 			{
 				string retracker = lstTrackersAdd.Items[j].Text;
-				bool exist = false;
-				for (int k = 0; k < lstTrackers.Items.Count; k++)
+				bool exist = !regex.IsMatch(retracker);
+				if (!exist)
 				{
-					string announce = lstTrackers.Items[k].SubItems[0].Text;
-					string announceWithoutStat = announce.Split('?')[0];
-					if (announce == "New...")
-						continue;
-					else if (!regex.IsMatch(announce))
+					for (int k = 0; k < lstTrackers.Items.Count; k++) // skip last New... item
 					{
-						lstTrackers.Items[k].Remove();
-						k--;
-						exist = false;
-					}
-					else if (retracker == announceWithoutStat)
-					{
-						exist = true;
+						string announce = lstTrackers.Items[k].SubItems[0].Text;
+						string announceWithoutStat = announce.Split('?')[0];
+						if (!regex.IsMatch(announce))
+						{
+							lstTrackers.Items[k].Remove();
+							k--;
+							exist = false;
+						}
+						else if (retracker == announceWithoutStat)
+						{
+							exist = true;
+						}
 					}
 				}
-				if (!exist & regex.IsMatch(retracker))
+				if (!exist)
 				{
-					if (!chkStat.Checked)
+					if (!bAddStatistic)
 					{
 						lstTrackers.Items.Add(retracker);
 					}
@@ -496,7 +507,30 @@ namespace TorrentPatcher
 					}
 				}
 			}
+			if (chkAddRetrackerLocal.Checked)
+			{
+				string retracker = "http://retracker.local/announce";
+				bool exist = false;
+				for (int k = 0; k < lstTrackers.Items.Count; k++) // skip last New... item
+				{
+					string announce = lstTrackers.Items[k].SubItems[0].Text;
+					string announceWithoutStat = announce.Split('?')[0];
+					if (!regex.IsMatch(announce))
+					{
+						lstTrackers.Items[k].Remove();
+						k--;
+						exist = false;
+					}
+					else if (retracker == announceWithoutStat)
+					{
+						exist = true;
+					}
+				}
+				if (!exist)
+					lstTrackers.Items.Add(retracker);
+			}
 			UpdateTrackerStructure();
+			lstTrackers.Items.Add(new ListViewItem(new string[] { addNewTracker, "", "", "" }));
 			string folder = GetSettingPath() + "Torrents";
 			Directory.CreateDirectory(folder);
 			int startIndex = torrentPath.LastIndexOf(@"\");
@@ -511,7 +545,7 @@ namespace TorrentPatcher
 		private void PatchMagnetLink(Stopwatch stopwatch)
 		{
 			Regex regex = new Regex("(http|https|udp)://(.*)");
-			string arguments = "magnet:?xt=urn:btih:" + _torrent.SHAHash;
+			StringBuilder arguments = new StringBuilder("magnet:?xt=urn:btih:" + _torrent.SHAHash);
 			for (int m = 0; m < lstTrackersAdd.Items.Count; m++)
 			{
 				string retracker = lstTrackersAdd.Items[m].Text;
@@ -519,17 +553,23 @@ namespace TorrentPatcher
 				{
 					if (!chkStat.Checked)
 					{
-						arguments = arguments + "&tr=" + retracker;
+						arguments.Append("&tr=");
+						arguments.Append(retracker);
 					}
 					else
 					{
-						string linkWithStat = String.Concat(arguments, "&tr=", retracker, 
-									"?name=", _torrent.Name, "&size=", _torrent.Size.ToString(), 
-									"&comment=", _torrent.Comment,  "&isp=", (cmbCity.SelectedIndex + 1).ToString(), 
-									"+", (cmbISP.SelectedIndex + 1).ToString() );
-						arguments = linkWithStat;
+						arguments.AppendFormat(
+							"&tr={0}?name={1}&size={2}&comment={3}&isp={4}+{5}", 
+							retracker, _torrent.Name, _torrent.Size, _torrent.Comment, 
+							cmbCity.SelectedIndex + 1, cmbISP.SelectedIndex + 1);
 					}
 				}
+			}
+			if (chkAddRetrackerLocal.Checked)
+			{
+				string retracker = "http://retracker.local/announce";
+				arguments.Append("&tr=");
+				arguments.Append(retracker);
 			}
 			try
 			{
@@ -544,7 +584,7 @@ namespace TorrentPatcher
 					Application.ProductName + Application.ProductVersion, MessageBoxButtons.OKCancel, 
 					MessageBoxIcon.Asterisk) == DialogResult.OK)
 				{
-					Process.Start(txtLaunchPath.Text, arguments);
+					Process.Start(txtLaunchPath.Text, arguments.ToString());
 					tslStatus.Text = "Magnet успешно передан";
 				}
 				else
@@ -727,15 +767,15 @@ namespace TorrentPatcher
 			try
 			{
 				Stream webStream = request.GetResponse().GetResponseStream();
-				string str2 = new StreamReader(webStream).ReadToEnd();
-				if (String.CompareOrdinal(Application.ProductVersion, str2) >= 0)
+				string version = new StreamReader(webStream).ReadToEnd();
+				if (String.CompareOrdinal(Application.ProductVersion, version) >= 0)
 				{
 					tslStatus.Text = "У вас последняя версия патчера.";
 				}
 				else
 				{
-					tslStatus.Text = "Новая версия (" + str2 + ")";
-					if (MessageBox.Show("Версия " + str2 + " доступна. Хотите загрузить новую версию?",
+					tslStatus.Text = "Новая версия (" + version + ")";
+					if (MessageBox.Show("Версия " + version + " доступна. Хотите загрузить новую версию?",
 						Application.ProductName + Application.ProductVersion, MessageBoxButtons.YesNo,
 						MessageBoxIcon.Asterisk, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
 					{
@@ -763,9 +803,10 @@ namespace TorrentPatcher
 				if (response.ContentLength > -1L)
 				{
 					long length;
-					if (System.IO.File.Exists(ini.IniReadValue("Settings", "TrackersFile")))
+					string trackersFile = ini.IniReadValue("Settings", "TrackersFile");
+					if (System.IO.File.Exists(trackersFile))
 					{
-						FileInfo info = new FileInfo(ini.IniReadValue("Settings", "TrackersFile"));
+						FileInfo info = new FileInfo(trackersFile);
 						length = info.Length;
 					}
 					else
@@ -777,7 +818,6 @@ namespace TorrentPatcher
 						contents = new StreamReader(response.GetResponseStream()).ReadToEnd();
 						if (contents == null)
 							return;
-						string trackersFile = ini.IniReadValue("Settings", "TrackersFile");
 						System.IO.File.WriteAllText(trackersFile, contents, Encoding.Unicode);
 						LoadRetrackersFile();
 						tslStatus.Text = "Трекер-лист обновлен успешно.";
@@ -1110,8 +1150,10 @@ namespace TorrentPatcher
 
 		private void FormPosAndSize()
 		{
-			base.Location = new Point(ini.IniReadIntValue("Settings", "FormPosX"), ini.IniReadIntValue("Settings", "FormPosY"));
-			base.Size = new Size(ini.IniReadIntValue("Settings", "FormSizeWidth"), ini.IniReadIntValue("Settings", "FormSizeHeight"));
+			Point formPos = new Point(ini.IniReadIntValue("Settings", "FormPosX"), ini.IniReadIntValue("Settings", "FormPosY"));
+			Size formSize = new Size(ini.IniReadIntValue("Settings", "FormSizeWidth"), ini.IniReadIntValue("Settings", "FormSizeHeight"));
+			base.Location = formPos;
+			base.Size = formSize;
 			if (ini.IniReadValue("Settings", "Formstate") == "Normal")
 			{
 				base.WindowState = FormWindowState.Normal;
@@ -1125,6 +1167,8 @@ namespace TorrentPatcher
 				base.WindowState = FormWindowState.Normal;
 			}
 		}
+
+		static string addNewTracker = "New...";
 
 		private void GetAnnounceList()
 		{
@@ -1142,7 +1186,7 @@ namespace TorrentPatcher
 					}
 				}
 			}
-			list.Add(new ListViewItem(new string[] { "New...", "", "", "" }));
+			list.Add(new ListViewItem(new string[] { addNewTracker, "", "", "" }));
 			lstTrackers.Items.Clear();
 			lstTrackers.Items.AddRange(list.ToArray());
 		}
@@ -1200,7 +1244,7 @@ namespace TorrentPatcher
 					list.Add(AddTracker(str));
 				}
 			}
-			list.Add(new ListViewItem(new string[] { "New...", "", "", "" }));
+			list.Add(new ListViewItem(new string[] { addNewTracker, "", "", "" }));
 			return list.ToArray();
 		}
 
@@ -1223,6 +1267,7 @@ namespace TorrentPatcher
 				chkPingCheck.Checked = ini.IniReadBoolValue("Settings", "CheckPing");
 				timeout = ini.IniReadIntValue("Settings", "Timeout", 500);
 				chkStat.Checked = ini.IniReadBoolValue("Settings", "AddStat");
+				chkAddRetrackerLocal.Checked = ini.IniReadBoolValue("Settings", "AddRetrackerLocal", true);
 				string trackersFile = ini.IniReadValue("Settings", "TrackersFile");
 				if (!System.IO.File.Exists(trackersFile))
 				{
@@ -1470,6 +1515,7 @@ namespace TorrentPatcher
 			ini.IniWriteValue("Settings", "CheckPing", chkPingCheck.Checked);
 			ini.IniWriteValue("Settings", "Timeout", timeout);
 			ini.IniWriteValue("Settings", "AddStat", chkStat.Checked);
+			ini.IniWriteValue("Settings", "AddRetrackerLocal", chkAddRetrackerLocal.Checked);
 			ini.IniWriteValue("Settings", "LaunchPath", txtLaunchPath.Text);
 			ini.IniWriteValue("Settings", "LaunchArguments", txtArguments.Text);
 			ini.IniWriteValue("Settings", "SecureEdit", chkSecureEditing.Checked);
@@ -1480,6 +1526,7 @@ namespace TorrentPatcher
 			ini.IniWriteValue("Settings", "UpdateURL", txtUpdatePatcher.Text);
 			ini.IniWriteValue("Settings", "TrackerIniIndex", cmbCity.SelectedIndex.ToString() + " " + 
 				cmbISP.SelectedIndex.ToString());
+
 			if (ini.IniReadBoolValue("Settings", "FirstRun") & !chkTrackersCheck.Checked)
 			{
 				tabControlMain.SelectedTab = tabSettings;
@@ -1579,12 +1626,12 @@ namespace TorrentPatcher
 			if (trvTorrent.Enabled && (e.Button == MouseButtons.Right))
 			{
 				trvTorrent.SelectedNode = trvTorrent.GetNodeAt(e.Location);
-				TrvTorrentAfterSelect(null, new TreeViewEventArgs(trvTorrent.SelectedNode, TreeViewAction.ByMouse));
+				trvTorrent_AfterSelect(null, new TreeViewEventArgs(trvTorrent.SelectedNode, TreeViewAction.ByMouse));
 				cmsStructure_Opened(null, null);
 			}
 		}
 
-		private void TrvTorrentAfterSelect(object sender, TreeViewEventArgs e)
+		private void trvTorrent_AfterSelect(object sender, TreeViewEventArgs e)
 		{
 			if (e.Action != TreeViewAction.Unknown)
 			{
@@ -1642,25 +1689,27 @@ namespace TorrentPatcher
 			{
 				if (regex.IsMatch(lstTrackers.Items[i].Text))
 				{
-					string text = lstTrackers.Items[i].Text;
-					TVal val = new TVal(DataType.String, text);
-					TreeNode node = AddNode("0", val);
-					TVal val2 = new TVal(DataType.List, null);
-					TreeNode node2 = AddNode(list.Count.ToString(), val2);
-					node2.Nodes.Add(node);
-					list.Add(node2);
+					string retracker = lstTrackers.Items[i].Text;
+					TVal retrackerVal = new TVal(DataType.String, retracker);
+					TreeNode retrackerNode = AddNode("0", retrackerVal);
+
+					TVal retrackerNodeAsListVal = new TVal(DataType.List, null);
+					int listIndex = list.Count;
+					TreeNode retrackerNodeAsList = AddNode(listIndex.ToString(), retrackerNodeAsListVal);
+					retrackerNodeAsList.Nodes.Add(retrackerNode);
+					list.Add(retrackerNodeAsList);
 				}
 			}
-			TVal val3 = new TVal(DataType.List, null);
-			TreeNode node3 = FindOrCreateNode("root/announce-list", val3);
+			TVal announceListVal = new TVal(DataType.List, null);
+			TreeNode announceList = FindOrCreateNode("root/announce-list", announceListVal);
 			if (list.Count == 0)
 			{
-				node3.Remove();
+				announceList.Remove();
 			}
 			else
 			{
-				node3.Nodes.Clear();
-				node3.Nodes.AddRange(list.ToArray());
+				announceList.Nodes.Clear();
+				announceList.Nodes.AddRange(list.ToArray());
 			}
 		}
 
