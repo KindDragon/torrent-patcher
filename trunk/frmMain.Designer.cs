@@ -66,6 +66,7 @@
 			this.tabSettings = new System.Windows.Forms.TabPage();
 			this.tabControlSettings = new System.Windows.Forms.TabControl();
 			this.tabSettingsMain = new System.Windows.Forms.TabPage();
+			this.chkAddRetrackerLocal = new System.Windows.Forms.CheckBox();
 			this.chkStat = new System.Windows.Forms.CheckBox();
 			this.barCheck = new System.Windows.Forms.ProgressBar();
 			this.chkPingCheck = new System.Windows.Forms.CheckBox();
@@ -149,7 +150,7 @@
 			this.grbMain.Margin = new System.Windows.Forms.Padding(4);
 			this.grbMain.Name = "grbMain";
 			this.grbMain.Padding = new System.Windows.Forms.Padding(4);
-			this.grbMain.Size = new System.Drawing.Size(364, 288);
+			this.grbMain.Size = new System.Drawing.Size(364, 303);
 			this.grbMain.TabIndex = 2;
 			this.grbMain.TabStop = false;
 			this.grbMain.Text = "Данные";
@@ -182,7 +183,7 @@
 			this.tableLayoutPanel8.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 25F));
 			this.tableLayoutPanel8.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 25F));
 			this.tableLayoutPanel8.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 25F));
-			this.tableLayoutPanel8.Size = new System.Drawing.Size(356, 265);
+			this.tableLayoutPanel8.Size = new System.Drawing.Size(356, 280);
 			this.tableLayoutPanel8.TabIndex = 0;
 			// 
 			// lstTrackers
@@ -201,7 +202,7 @@
 			this.lstTrackers.Margin = new System.Windows.Forms.Padding(4);
 			this.lstTrackers.Name = "lstTrackers";
 			this.lstTrackers.ShowItemToolTips = true;
-			this.lstTrackers.Size = new System.Drawing.Size(258, 191);
+			this.lstTrackers.Size = new System.Drawing.Size(258, 206);
 			this.lstTrackers.TabIndex = 16;
 			this.lstTrackers.UseCompatibleStateImageBehavior = false;
 			this.lstTrackers.View = System.Windows.Forms.View.Details;
@@ -252,7 +253,7 @@
 			// lblTrackers
 			// 
 			this.lblTrackers.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-			this.lblTrackers.Location = new System.Drawing.Point(5, 148);
+			this.lblTrackers.Location = new System.Drawing.Point(5, 156);
 			this.lblTrackers.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
 			this.lblTrackers.Name = "lblTrackers";
 			this.lblTrackers.Size = new System.Drawing.Size(79, 32);
@@ -327,7 +328,7 @@
 			this.tabControlMain.Multiline = true;
 			this.tabControlMain.Name = "tabControlMain";
 			this.tabControlMain.SelectedIndex = 0;
-			this.tabControlMain.Size = new System.Drawing.Size(380, 325);
+			this.tabControlMain.Size = new System.Drawing.Size(380, 340);
 			this.tabControlMain.TabIndex = 0;
 			// 
 			// tabData
@@ -337,7 +338,7 @@
 			this.tabData.Margin = new System.Windows.Forms.Padding(4);
 			this.tabData.Name = "tabData";
 			this.tabData.Padding = new System.Windows.Forms.Padding(4);
-			this.tabData.Size = new System.Drawing.Size(372, 296);
+			this.tabData.Size = new System.Drawing.Size(372, 311);
 			this.tabData.TabIndex = 3;
 			this.tabData.Text = "Данные";
 			this.tabData.UseVisualStyleBackColor = true;
@@ -351,7 +352,7 @@
 			this.tabStructure.Margin = new System.Windows.Forms.Padding(4);
 			this.tabStructure.Name = "tabStructure";
 			this.tabStructure.Padding = new System.Windows.Forms.Padding(4);
-			this.tabStructure.Size = new System.Drawing.Size(372, 296);
+			this.tabStructure.Size = new System.Drawing.Size(372, 311);
 			this.tabStructure.TabIndex = 0;
 			this.tabStructure.Text = "Структура";
 			this.tabStructure.UseVisualStyleBackColor = true;
@@ -506,7 +507,7 @@
 			this.tabSettings.Margin = new System.Windows.Forms.Padding(4);
 			this.tabSettings.Name = "tabSettings";
 			this.tabSettings.Padding = new System.Windows.Forms.Padding(4);
-			this.tabSettings.Size = new System.Drawing.Size(372, 296);
+			this.tabSettings.Size = new System.Drawing.Size(372, 311);
 			this.tabSettings.TabIndex = 4;
 			this.tabSettings.Text = "Настройки";
 			this.tabSettings.UseVisualStyleBackColor = true;
@@ -523,12 +524,13 @@
 			this.tabControlSettings.Margin = new System.Windows.Forms.Padding(4);
 			this.tabControlSettings.Name = "tabControlSettings";
 			this.tabControlSettings.SelectedIndex = 0;
-			this.tabControlSettings.Size = new System.Drawing.Size(366, 290);
+			this.tabControlSettings.Size = new System.Drawing.Size(366, 305);
 			this.tabControlSettings.TabIndex = 0;
 			this.tabControlSettings.SelectedIndexChanged += new System.EventHandler(this.TabControl2SelectedIndexChanged);
 			// 
 			// tabSettingsMain
 			// 
+			this.tabSettingsMain.Controls.Add(this.chkAddRetrackerLocal);
 			this.tabSettingsMain.Controls.Add(this.chkStat);
 			this.tabSettingsMain.Controls.Add(this.barCheck);
 			this.tabSettingsMain.Controls.Add(this.chkPingCheck);
@@ -547,10 +549,20 @@
 			this.tabSettingsMain.Location = new System.Drawing.Point(4, 25);
 			this.tabSettingsMain.Margin = new System.Windows.Forms.Padding(4);
 			this.tabSettingsMain.Name = "tabSettingsMain";
-			this.tabSettingsMain.Size = new System.Drawing.Size(358, 261);
+			this.tabSettingsMain.Size = new System.Drawing.Size(358, 276);
 			this.tabSettingsMain.TabIndex = 2;
 			this.tabSettingsMain.Text = "Основные";
 			this.tabSettingsMain.UseVisualStyleBackColor = true;
+			// 
+			// chkAddRetrackerLocal
+			// 
+			this.chkAddRetrackerLocal.AutoSize = true;
+			this.chkAddRetrackerLocal.Location = new System.Drawing.Point(96, 248);
+			this.chkAddRetrackerLocal.Name = "chkAddRetrackerLocal";
+			this.chkAddRetrackerLocal.Size = new System.Drawing.Size(196, 21);
+			this.chkAddRetrackerLocal.TabIndex = 34;
+			this.chkAddRetrackerLocal.Text = "Добавлять retracker.local";
+			this.chkAddRetrackerLocal.UseVisualStyleBackColor = true;
 			// 
 			// chkStat
 			// 
@@ -740,7 +752,7 @@
 			this.tabSettingsAdditional.Margin = new System.Windows.Forms.Padding(4);
 			this.tabSettingsAdditional.Name = "tabSettingsAdditional";
 			this.tabSettingsAdditional.Padding = new System.Windows.Forms.Padding(4);
-			this.tabSettingsAdditional.Size = new System.Drawing.Size(358, 261);
+			this.tabSettingsAdditional.Size = new System.Drawing.Size(358, 276);
 			this.tabSettingsAdditional.TabIndex = 0;
 			this.tabSettingsAdditional.Text = "Дополнительные";
 			this.tabSettingsAdditional.UseVisualStyleBackColor = true;
@@ -775,7 +787,7 @@
 			this.lstTrackersAdd.Margin = new System.Windows.Forms.Padding(4);
 			this.lstTrackersAdd.Name = "lstTrackersAdd";
 			this.lstTrackersAdd.ShowItemToolTips = true;
-			this.lstTrackersAdd.Size = new System.Drawing.Size(350, 146);
+			this.lstTrackersAdd.Size = new System.Drawing.Size(350, 161);
 			this.lstTrackersAdd.TabIndex = 6;
 			this.lstTrackersAdd.UseCompatibleStateImageBehavior = false;
 			this.lstTrackersAdd.View = System.Windows.Forms.View.Details;
@@ -858,7 +870,7 @@
 			this.tabSettingsUpdates.Location = new System.Drawing.Point(4, 25);
 			this.tabSettingsUpdates.Margin = new System.Windows.Forms.Padding(4);
 			this.tabSettingsUpdates.Name = "tabSettingsUpdates";
-			this.tabSettingsUpdates.Size = new System.Drawing.Size(358, 261);
+			this.tabSettingsUpdates.Size = new System.Drawing.Size(358, 276);
 			this.tabSettingsUpdates.TabIndex = 3;
 			this.tabSettingsUpdates.Text = "Обновления";
 			this.tabSettingsUpdates.UseVisualStyleBackColor = true;
@@ -953,7 +965,7 @@
 			this.statusStripMain.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tslStatus,
             this.tslAuthor});
-			this.statusStripMain.Location = new System.Drawing.Point(0, 326);
+			this.statusStripMain.Location = new System.Drawing.Point(0, 341);
 			this.statusStripMain.Name = "statusStripMain";
 			this.statusStripMain.Padding = new System.Windows.Forms.Padding(1, 0, 19, 0);
 			this.statusStripMain.Size = new System.Drawing.Size(382, 29);
@@ -987,14 +999,14 @@
 			// 
 			this.AllowDrop = true;
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-			this.ClientSize = new System.Drawing.Size(382, 355);
+			this.ClientSize = new System.Drawing.Size(382, 370);
 			this.Controls.Add(this.statusStripMain);
 			this.Controls.Add(this.tabControlMain);
 			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
 			this.Location = new System.Drawing.Point(50, 50);
 			this.Margin = new System.Windows.Forms.Padding(4);
 			this.MaximizeBox = false;
-			this.MinimumSize = new System.Drawing.Size(400, 400);
+			this.MinimumSize = new System.Drawing.Size(400, 415);
 			this.Name = "frmMain";
 			this.Text = "Патчер торрентов";
 			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.frmMain_FormClosing);
@@ -1104,5 +1116,6 @@
         private System.Windows.Forms.Button btnStructEdit;
         private System.Windows.Forms.Button btnStructRemove;
         private System.Windows.Forms.Button btnStructAdd;
+		private System.Windows.Forms.CheckBox chkAddRetrackerLocal;
     }
 }

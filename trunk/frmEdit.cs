@@ -36,7 +36,6 @@ namespace TorrentPatcher
 			txtKeyValue.Text = value;
 			lblPlace.Text = path.Substring(0, path.LastIndexOf('/'));
 			Text = edit ? ("Editing " + path) : ("Adding To " + lblPlace.Text);
-			base.ShowDialog();
 		}
 
 		private void btnCancel_Click(object sender, EventArgs e)
