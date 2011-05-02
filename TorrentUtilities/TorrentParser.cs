@@ -114,7 +114,7 @@ namespace TorrentUtilities
 			List<TVal> TempList = new List<TVal>();
 			TVal val = new TVal(DataType.List, TempList);
 			//Lopping while it's not the end of the list ("e")
-			while (char.ConvertFromUtf32(_torrent.PeekChar()) != "e")
+			while (GetChar() != 'e')
 			{
 				//Adding the list value
 				TempList.Add(ProcessVal());
@@ -188,10 +188,10 @@ namespace TorrentUtilities
 			//Looping to get the length
 			do
 			{
-				tempLen.Append(char.ConvertFromUtf32(_torrent.Read()).ToString());
+				tempLen.Append(GetString());
 			}
 			//While it's not the length end (":")
-			while (char.ConvertFromUtf32(_torrent.PeekChar()) != ":");
+			while (GetChar() != ':');
 			//Getting read of the length end (":")
 			_torrent.Read();
 
@@ -213,10 +213,10 @@ namespace TorrentUtilities
 			//Loop to get the integer string
 			do
 			{
-				TempString.Append(char.ConvertFromUtf32(_torrent.Read()).ToString());
+				TempString.Append(GetString());
 			}
 			//Until "e" comes up
-			while (char.ConvertFromUtf32(_torrent.PeekChar()) != "e");
+			while (GetChar() != 'e');
 			//Getting rid of the integer end ("e")
 			_torrent.Read();
 			long value = long.Parse(TempString.ToString());
@@ -232,8 +232,8 @@ namespace TorrentUtilities
 			ReadProgress();
 			_TotalValues++;
 			//Check which value type is it
-			string t = char.ConvertFromUtf32(_torrent.PeekChar());
-			switch (t[0])
+			char t = GetChar();
+			switch (t)
 			{
 				//A dictionary ("d")
 				case 'd':
@@ -279,6 +279,18 @@ namespace TorrentUtilities
 				_SHAHash = sha1.ComputeHash(infoValueBytes);
 				return BitConverter.ToString(_SHAHash).Replace("-", "");
 			}
+		}
+
+		private char GetChar()
+		{
+			string s = char.ConvertFromUtf32(_torrent.PeekChar());
+			Debug.Assert(s.Length == 1);
+			return s[0];
+		}
+
+		private string GetString()
+		{
+			return char.ConvertFromUtf32(_torrent.Read()).ToString();
 		}
 
 		///// <summary>
@@ -498,7 +510,6 @@ namespace TorrentUtilities
 			_rCallback = ReadNotify;
 			Process(TPath);
 		}
-
 
 		private void ReadProgress()
 		{
