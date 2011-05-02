@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Torrent Patcher"
-#define MyAppVersion "1.9.6.0"
+#define MyAppVersion "1.9.7.0"
 #define MyAppPublisher "Re-tracker.ru"
 #define MyAppURL "http://re-tracker.ru/index.php?showforum=9"
 #define MyAppExeName "TorrentPatcher.exe"
